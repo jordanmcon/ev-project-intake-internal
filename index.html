@@ -3,10 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Electric Era — Internal SPD Forecaster</title>
-<script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>Electric Era — Internal Portfolio P&L Tool</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -43,66 +40,70 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .int-badge{background:rgba(248,185,24,.12);border:1px solid var(--gold-border);border-radius:99px;padding:4px 11px;font-size:.72rem;font-family:var(--mono);color:var(--gold);letter-spacing:.07em;text-transform:uppercase;}
 
 /* MAIN LAYOUT */
-.main-layout{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 65px);}
-.sidebar{background:var(--s2);border-right:1px solid var(--border);padding:28px 24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;}
+.main-layout{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 65px);}
+.sidebar{background:var(--s2);border-right:1px solid var(--border);padding:24px 22px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
 .results-pane{padding:32px 36px;overflow-y:auto;background:var(--bg);}
 
 /* SIDEBAR SECTIONS */
 .sidebar-section{display:flex;flex-direction:column;gap:10px;}
 .sidebar-title{font-size:.72rem;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;}
-.sidebar-divider{border:none;border-top:1px solid var(--border);margin:4px 0;}
+.sidebar-divider{border:none;border-top:1px solid var(--border);margin:2px 0;}
 
 /* FORM ELEMENTS */
 .field{display:flex;flex-direction:column;gap:5px;}
 .field label{font-size:.75rem;font-weight:400;color:var(--dim);letter-spacing:.03em;text-transform:uppercase;}
-input[type=text],select{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;font-size:.95rem;font-family:var(--font);color:var(--text);outline:none;transition:border-color .17s,box-shadow .17s;appearance:none;}
+input[type=text],input[type=number],select{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;font-size:.95rem;font-family:var(--font);color:var(--text);outline:none;transition:border-color .17s,box-shadow .17s;appearance:none;}
 input:focus,select:focus{border-color:var(--gold-border);box-shadow:0 0 0 3px var(--gold-glow)}
 input::placeholder{color:var(--muted)}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23F8B918' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer;}
-select option{background:var(--s2)}
 
-/* ADDRESS INPUT ZONE */
-.addr-input-wrap{position:relative;}
-.addr-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--s2);border:1px solid var(--gold-border);border-radius:var(--r);z-index:200;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-.addr-add-row{display:flex;gap:7px;align-items:center;margin-top:7px;}
-.addr-hint{font-size:.72rem;color:var(--muted);font-family:var(--mono);}
-.site-tags{display:flex;flex-wrap:wrap;gap:5px;min-height:10px;margin-top:4px;}
-.site-tag{display:inline-flex;align-items:center;gap:6px;background:var(--s3);border:1px solid var(--border);border-radius:6px;padding:4px 9px 4px 8px;font-size:.82rem;color:var(--text);}
-.site-tag-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;box-shadow:0 0 5px rgba(74,222,128,0.5);}
-.site-tag-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0;line-height:1;}
-.site-count{font-size:.72rem;font-family:var(--mono);color:var(--gold);min-height:16px;}
+/* SITES STEPPER */
+.sites-stepper{display:flex;align-items:center;gap:0;background:var(--s3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.step-btn{background:none;border:none;color:var(--muted);font-size:1.3rem;width:42px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.step-btn:hover{background:rgba(255,255,255,.06);color:var(--gold);}
+.sites-val{flex:1;text-align:center;font-size:1.1rem;font-weight:500;color:var(--text);font-family:var(--mono);padding:0;}
+.sites-meta{font-size:.72rem;color:var(--muted);font-family:var(--mono);}
 
-/* UPLOAD ZONE */
-.upload-zone{border:1px dashed var(--border);border-radius:var(--r);padding:11px 14px;cursor:pointer;transition:all .17s;text-align:center;font-size:.82rem;color:var(--muted);}
-.upload-zone:hover{border-color:var(--gold-border);color:var(--text)}
-.upload-zone input{display:none}
-
-/* STALL SLIDER */
-.stall-display{font-size:42px;font-weight:400;color:var(--gold);letter-spacing:-.04em;font-family:var(--mono);line-height:1;}
-.stall-unit{font-size:.8rem;color:var(--muted);margin-top:1px;margin-bottom:10px;}
+/* SLIDER */
+.stall-display{font-size:38px;font-weight:400;color:var(--gold);letter-spacing:-.04em;font-family:var(--mono);line-height:1;}
+.stall-unit{font-size:.75rem;color:var(--muted);margin-top:1px;margin-bottom:8px;}
 input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:99px;background:var(--s3);outline:none;padding:0;border:none;cursor:pointer;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 8px rgba(248,185,24,.4);}
-.range-labels{display:flex;justify-content:space-between;margin-top:5px;font-size:.7em;font-family:var(--mono);color:var(--muted);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 8px rgba(248,185,24,.4);}
+.range-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:.68em;font-family:var(--mono);color:var(--muted);}
+
+/* SLIDER GROUP (inline label + value) */
+.slider-row{display:flex;flex-direction:column;gap:3px;}
+.slider-header{display:flex;justify-content:space-between;align-items:baseline;}
+.slider-label{font-size:.78rem;font-weight:400;color:var(--dim);}
+.slider-val{font-size:.88rem;font-weight:600;color:var(--gold);font-family:var(--mono);}
+.slider-rl{display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-top:2px;}
+
+/* PRODUCT TOGGLE */
+.prod-toggle{display:flex;gap:0;background:var(--s3);border:1px solid var(--border);border-radius:var(--r);padding:3px;margin-top:2px;}
+.prod-btn{flex:1;padding:8px 12px;border-radius:8px;font-size:.82rem;font-family:var(--mono);cursor:pointer;transition:all .17s;border:none;background:transparent;color:var(--muted);text-align:center;letter-spacing:.01em;}
+.prod-btn.active{background:var(--gold);color:#09080A;font-weight:600;}
 
 /* CHOICE CARDS */
-.choices{display:flex;flex-direction:column;gap:6px;}
-.choice{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;transition:all .15s;position:relative;overflow:hidden;user-select:none;}
+.choices{display:flex;flex-direction:column;gap:5px;}
+.choice{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;transition:all .15s;user-select:none;}
 .choice:hover{border-color:var(--gold-border);}
 .choice.sel{border-color:var(--gold);background:rgba(248,185,24,.05);}
-.ck{width:18px;height:18px;min-width:18px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--muted);background:var(--s2);flex-shrink:0;margin-top:1px;}
+.ck{width:17px;height:17px;min-width:17px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--muted);background:var(--s2);flex-shrink:0;margin-top:1px;}
 .choice.sel .ck{background:var(--gold);border-color:var(--gold);color:#09080A;font-weight:700;}
-.ct{font-size:.9rem;font-weight:400;color:var(--text);line-height:1.3;}
-.cd{font-size:.78rem;color:var(--muted);margin-top:2px;line-height:1.3;}
+.ct{font-size:.88rem;font-weight:400;color:var(--text);line-height:1.3;}
+.cd{font-size:.75rem;color:var(--muted);margin-top:2px;line-height:1.3;}
 
-/* CHECK CARDS */
-.checks{display:flex;flex-direction:column;gap:6px;}
-.check-card{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;transition:all .15s;user-select:none;}
+/* CHECK CARD (single checkbox toggle) */
+.check-card{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s;user-select:none;}
 .check-card:hover{border-color:var(--gold-border);}
 .check-card.sel{border-color:var(--gold);background:rgba(248,185,24,.05);}
-.chkbox{width:15px;height:15px;min-width:15px;border:1.5px solid var(--border);border-radius:3px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0;margin-top:2px;}
+.chkbox{width:15px;height:15px;min-width:15px;border:1.5px solid var(--border);border-radius:3px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0;}
 .check-card.sel .chkbox{background:var(--gold);border-color:var(--gold);color:#09080A;font-weight:900;}
 .chk-title{font-size:.85rem;font-weight:400;color:var(--text);}
-.chk-sub{font-size:.75rem;color:var(--muted);margin-top:2px;line-height:1.35;}
+.chk-sub{font-size:.73rem;color:var(--muted);margin-top:2px;line-height:1.35;}
+.check-card-body{flex:1;}
+
+/* TOGGLE PAIRS (Design/EPC) */
+.toggle-pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 
 /* BUTTONS */
 .btn{padding:10px 20px;border-radius:var(--r);font-size:.92rem;font-weight:400;font-family:var(--font);cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:7px;border:none;letter-spacing:-.01em;}
@@ -111,881 +112,1159 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);padding:7px 13px;font-size:.8rem;}
 .btn-ghost:hover{border-color:var(--gold-border);color:var(--text);}
-.btn-sm{padding:5px 12px;font-size:.78rem;}
 
-/* ERROR */
-.ferr{font-size:.75rem;color:#ff7070;display:none;}
-
-/* RESULTS PANE */
-.results-hero{margin-bottom:28px;}
-.results-hero h2{font-size:clamp(1.4rem,2.5vw,2rem);font-weight:400;letter-spacing:-.025em;margin-bottom:6px;}
-.results-hero h2 em{font-style:normal;color:var(--gold);}
-.results-hero p{font-size:.88rem;color:var(--muted);}
+/* RESULTS */
 .results-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:14px;color:var(--muted);text-align:center;}
 .results-empty svg{opacity:.3;}
-.results-empty p{font-size:.88rem;max-width:300px;}
+.results-empty p{font-size:.88rem;max-width:300px;line-height:1.6;}
+.results-hero{margin-bottom:24px;}
+.results-hero h2{font-size:clamp(1.3rem,2.2vw,1.8rem);font-weight:400;letter-spacing:-.025em;margin-bottom:5px;}
+.results-hero h2 em{font-style:normal;color:var(--gold);}
+.results-hero p{font-size:.85rem;color:var(--muted);}
 
-/* STAT CARDS */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
-.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
-.stat-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.stat-value{font-size:1.8rem;font-weight:400;letter-spacing:-.03em;font-family:var(--mono);}
-.stat-value.gold{color:var(--gold);}
-.stat-sub{font-size:.72rem;color:var(--muted);margin-top:3px;}
-
-/* TAB TOGGLE */
-.tab-row{display:flex;gap:0;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:24px;width:fit-content;}
-.tab-btn{padding:8px 20px;border-radius:8px;font-size:.82rem;font-family:var(--mono);cursor:pointer;transition:all .17s;border:none;background:transparent;color:var(--muted);letter-spacing:.04em;}
-.tab-btn.active{background:var(--gold);color:#09080A;font-weight:600;}
-
-/* CARDS */
-.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:18px;}
-.card-title{font-size:.95rem;font-weight:500;margin-bottom:4px;}
-.card-sub{font-size:.78rem;color:var(--muted);margin-bottom:14px;line-height:1.4;}
-
-/* NO-DATA BANNER */
-.no-data-banner{background:rgba(248,185,24,.07);border:1px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;font-size:.82rem;color:var(--muted);margin-bottom:18px;display:none;}
-
-/* SITE BREAKDOWN */
-.site-breakdown{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;display:none;}
-
-/* MAP */
-#output-map{height:260px;border-radius:8px;overflow:hidden;background:var(--s3);}
-
-/* SLIDER GRID */
-.slider-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.slider-group{display:flex;flex-direction:column;gap:4px;}
-.slider-header{display:flex;justify-content:space-between;align-items:baseline;}
-.slider-label{font-size:.82rem;font-weight:500;}
-.slider-value{font-size:.88rem;font-weight:600;color:var(--gold);font-family:var(--mono);}
-.slider-desc{font-size:.72rem;color:var(--muted);line-height:1.4;}
-.pl-range{-webkit-appearance:none;width:100%;height:3px;background:var(--s3);border-radius:99px;outline:none;cursor:pointer;margin:5px 0;}
-.pl-range::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 7px rgba(248,185,24,.4);}
-.slider-range-labels{display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-top:2px;}
-
-/* METRICS GRID */
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px;}
+/* METRIC CARDS */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px;}
 .metric-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
 .metric-card.featured{border-color:var(--gold-border);background:rgba(248,185,24,.04);}
 .metric-label{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.metric-value{font-size:1.35rem;font-weight:400;font-family:var(--mono);letter-spacing:-.03em;}
+.metric-value{font-size:1.3rem;font-weight:400;font-family:var(--mono);letter-spacing:-.03em;}
 .metric-value.gold{color:var(--gold);}
-.metric-sub{font-size:.68rem;color:var(--muted);margin-top:2px;}
+.metric-value.red{color:#F87171;}
+.metric-sub{font-size:.67rem;color:var(--muted);margin-top:2px;line-height:1.4;}
 
-/* PL TABLE */
+/* P&L TABLE */
 .pl-table-wrap{overflow-x:auto;}
-.pl-table{width:100%;border-collapse:collapse;font-size:.78rem;font-family:var(--mono);}
-.pl-table th{padding:.55rem .7rem;text-align:right;font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-weight:500;}
+.pl-table{width:100%;border-collapse:collapse;font-size:.76rem;font-family:var(--mono);}
+.pl-table th{padding:.5rem .65rem;text-align:right;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-weight:500;}
 .pl-table th:first-child{text-align:left;}
 .pl-table th.total-col{color:var(--gold);border-left:1px solid var(--border);}
-.pl-table td{padding:.45rem .7rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.04);color:var(--dim);white-space:nowrap;}
-.pl-table td:first-child{text-align:left;color:var(--text);padding-left:.45rem;}
+.pl-table td{padding:.42rem .65rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.04);color:var(--dim);white-space:nowrap;}
+.pl-table td:first-child{text-align:left;color:var(--text);padding-left:.4rem;}
 .pl-table td.total-col{color:var(--text);border-left:1px solid var(--border);font-weight:600;}
-.pl-table tr.section-header td{padding-top:.9rem;padding-bottom:.2rem;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border-bottom:none;color:var(--muted);}
+.pl-table tr.section-header td{padding-top:.85rem;padding-bottom:.2rem;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border-bottom:none;color:var(--muted);}
 .pl-table tr.subtotal td{border-top:1px solid var(--border);color:var(--text);font-weight:600;}
-.pl-table tr.grand-total td{border-top:2px solid var(--gold-border);color:var(--gold);font-weight:700;font-size:.84rem;}
+.pl-table tr.grand-total td{border-top:2px solid var(--gold-border);color:var(--gold);font-weight:700;font-size:.82rem;}
 .pl-table .neg{color:#F87171;}
 .pl-table .pos{color:#22C55E;}
 
-/* SPD FORECAST TABLE */
-.spd-table-wrap{overflow-x:auto;margin-top:6px;}
-.spd-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:var(--mono);}
-.spd-table th{padding:.5rem .65rem;text-align:right;font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
-.spd-table th:first-child{text-align:left;}
-.spd-table td{padding:.45rem .65rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.04);color:var(--dim);white-space:nowrap;}
-.spd-table td:first-child{text-align:left;color:var(--text);}
-.spd-table tr.total-row td{border-top:2px solid var(--gold-border);color:var(--gold);font-weight:700;font-size:.84rem;}
-.spd-table .year-spd{color:var(--gold);}
+/* CARD */
+.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:18px;}
+.card-title{font-size:.92rem;font-weight:500;margin-bottom:4px;}
+.card-sub{font-size:.76rem;color:var(--muted);margin-bottom:14px;line-height:1.4;}
 
-/* EXPORT ROW */
-.export-row{display:flex;gap:8px;align-items:center;}
-.btn-export{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r);padding:6px 12px;font-size:.75rem;cursor:pointer;font-family:var(--font);transition:all .17s;display:inline-flex;align-items:center;gap:5px;}
+/* EXPORT */
+.btn-export{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r);padding:6px 12px;font-size:.73rem;cursor:pointer;font-family:var(--font);transition:all .17s;display:inline-flex;align-items:center;gap:5px;}
 .btn-export:hover{border-color:var(--gold-border);color:var(--text);}
 
-/* LOADING SPINNER */
-.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+/* CHART CARD */
+.chart-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:18px;}
+
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-block{display:flex;flex-direction:column;align-items:center;padding:2rem 0;gap:12px;}
-.loading-block span{font-family:var(--mono);font-size:.8rem;color:var(--muted);}
-
-/* BATTERY ROW */
-.battery-row{display:none;grid-column:1/-1;}
-.battery-inner{display:flex;align-items:center;gap:12px;background:rgba(248,185,24,.07);border:1px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;}
-
-/* TOAST */
-.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1a1015;border:1px solid rgba(255,100,100,.35);border-radius:9px;padding:10px 18px;font-size:13px;color:#ff8888;z-index:999;font-family:var(--font);box-shadow:0 4px 18px rgba(0,0,0,.5);pointer-events:none;animation:toastIn .2s ease;}
-@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
 /* DISCLAIMER */
 .disclaimer{padding:.75rem 0;font-size:.72rem;color:var(--muted);text-align:center;line-height:1.6;}
 
-@media(max-width:860px){.main-layout{grid-template-columns:1fr;}.sidebar{border-right:none;border-bottom:1px solid var(--border);}.results-pane{padding:24px 18px;}.slider-grid{grid-template-columns:1fr;}}
+/* CAAS FEE CALLOUT */
+.fee-callout{background:rgba(248,185,24,.07);border:1px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.fee-callout-label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.fee-callout-val{font-size:1.25rem;font-weight:600;color:var(--gold);font-family:var(--mono);white-space:nowrap;}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr;}
+  .sidebar{border-right:none;border-bottom:1px solid var(--border);}
+  .results-pane{padding:24px 18px;}
+  .toggle-pair{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
 
 <header>
+  <span style="font-size:.93rem;font-weight:400;letter-spacing:-.01em;">Electric Era</span>
   <span class="int-badge">⚡ Internal Tool</span>
 </header>
 
 <div class="main-layout">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+<!-- SIDEBAR -->
+<aside class="sidebar">
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">Sites</div>
-      <div class="field">
-        <label>Add site address</label>
-        <div class="addr-input-wrap">
-          <input type="text" id="siteAddressInput" placeholder="123 Main St, Seattle, WA" autocomplete="off"
-            oninput="onSiteInput(event)" onkeydown="onSiteKeydown(event)"
-            onblur="setTimeout(()=>{const b=document.getElementById('addr-suggestions');if(b)b.innerHTML='';},150)">
-          <div id="addr-suggestions" class="addr-suggestions" style="display:none;"></div>
-        </div>
-        <div class="addr-add-row">
-          <button id="add-btn" class="btn btn-ghost btn-sm" onmousedown="addSite()">+ Add</button>
-          <span class="addr-hint">or press Enter · select from suggestions</span>
-        </div>
-        <div class="ferr" id="e-intake-verify"></div>
-        <div class="ferr" id="e-siteAddress">Please add at least one site.</div>
+  <!-- DEAL STRUCTURE -->
+  <div class="sidebar-section">
+    <div class="sidebar-title">Purchasing Model</div>
+    <div class="choices">
+      <div class="choice sel" id="choice-dp" onclick="pickBudget('dp',this)">
+        <div class="ck">A</div>
+        <div><div class="ct">Direct Purchase</div><div class="cd">CapEx model — retailer owns the asset</div></div>
       </div>
-      <div class="upload-zone" onclick="document.getElementById('csv-input').click()">
-        <input type="file" id="csv-input" accept=".csv,.txt" onchange="if(this.files[0])handleCSV(this.files[0])">
-        <span style="margin-right:5px;">📎</span> Import CSV — one address per row
+      <div class="choice" id="choice-caas" onclick="pickBudget('caas',this)">
+        <div class="ck">B</div>
+        <div><div class="ct">Charging as a Service</div><div class="cd">Monthly subscription — no upfront CapEx</div></div>
       </div>
-      <div class="site-count" id="site-count"></div>
-      <div class="site-tags" id="site-tags"></div>
+    </div>
+  </div>
+
+  <hr class="sidebar-divider">
+
+  <!-- PORTFOLIO -->
+  <div class="sidebar-section">
+    <div class="sidebar-title">Portfolio</div>
+
+    <div class="field">
+      <label>Number of Sites</label>
+      <div class="sites-stepper">
+        <button class="step-btn" onclick="stepSites(-1)">−</button>
+        <span class="sites-val" id="sites-display">1</span>
+        <button class="step-btn" onclick="stepSites(1)">+</button>
+      </div>
+      <span class="sites-meta" id="sites-meta">1 site · <span id="total-ports-meta">4</span> total ports</span>
     </div>
 
-    <hr class="sidebar-divider">
+    <div class="field">
+      <label>Ports per Site</label>
+      <div class="stall-display" id="ports-display">4</div>
+      <div class="stall-unit">ports per site</div>
+      <input type="range" id="ports-range" min="2" max="16" value="4" step="1"
+        oninput="S.ports=+this.value;updatePortsDisplay();trackRange(this);maybeRerender();">
+      <div class="range-labels"><span>2</span><span>4</span><span>8</span><span>12</span><span>16</span></div>
+    </div>
+  </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">Configuration</div>
+  <hr class="sidebar-divider">
 
-      <div class="field">
-        <label>Charging stalls</label>
-        <div class="stall-display" id="stall-num">4</div>
-        <div class="stall-unit">stalls per site</div>
-        <input type="range" id="stall-range" min="2" max="18" value="4" oninput="S.stalls=+this.value;document.getElementById('stall-num').textContent=this.value;trackRange(this)">
-        <div class="range-labels"><span>2</span><span>6</span><span>10</span><span>14</span><span>18</span></div>
-      </div>
+  <!-- HARDWARE -->
+  <div class="sidebar-section">
+    <div class="sidebar-title">Hardware</div>
 
-      <div class="field">
-        <label>Budget approach</label>
-        <div class="choices">
-          <div class="choice sel" id="choice-allocated" onclick="pickBudget('allocated',this)">
-            <div class="ck">A</div>
-            <div><div class="ct">Direct purchase</div><div class="cd">CapEx model — upfront investment</div></div>
-          </div>
-          <div class="choice" id="choice-financed" onclick="pickBudget('financed',this)">
-            <div class="ck">B</div>
-            <div><div class="ct">Charging as a Service</div><div class="cd">Monthly subscription — no upfront CapEx</div></div>
-          </div>
-        </div>
-        <div class="ferr" id="e-budget">Please select a budget approach.</div>
-      </div>
-
-      <!-- CaaS product (only shown when financed) -->
-      <div id="caas-product-section" style="display:none;" class="field">
-        <label>CaaS Product</label>
-        <div class="choices">
-          <div class="choice" id="choice-base" onclick="pickProduct('base',this)">
-            <div class="ck">A</div>
-            <div><div class="ct">Base Station</div><div class="cd">200 kW / port</div></div>
-          </div>
-          <div class="choice" id="choice-re400" onclick="pickProduct('re400',this)">
-            <div class="ck">B</div>
-            <div><div class="ct">RE400</div><div class="cd">400 kW / port · HaloAI</div></div>
-          </div>
-        </div>
-        <div class="ferr" id="e-caasProduct">Please select a product.</div>
-      </div>
-
-      <!-- Retail programs (only shown when allocated) -->
-      <div id="retail-section" class="field">
-        <label>Retail Programs</label>
-        <div class="checks">
-          <div class="check-card" id="chk-rmn" onclick="toggleRetail('rmn',this)">
-            <div class="chkbox"></div>
-            <div><div class="chk-title">Retail Media Network</div><div class="chk-sub">Ad revenue from charger screen impressions</div></div>
-          </div>
-          <div class="check-card" id="chk-loyalty" onclick="toggleRetail('loyalty',this)">
-            <div class="chkbox"></div>
-            <div><div class="chk-title">Loyalty Program</div><div class="chk-sub">New loyalty signups + incremental visits</div></div>
-          </div>
-          <div class="check-card" id="chk-membership" onclick="toggleRetail('membership',this)">
-            <div class="chkbox"></div>
-            <div><div class="chk-title">Membership Program</div><div class="chk-sub">New paid memberships + member visits</div></div>
-          </div>
-          <div class="check-card" id="chk-none-retail" onclick="toggleRetailNone(this)" style="opacity:.8;">
-            <div class="chkbox"></div>
-            <div><div class="chk-title">None for now</div><div class="chk-sub">Standard charging — programs can be added later</div></div>
-          </div>
-        </div>
-        <div class="ferr" id="e-retail">Please make a selection.</div>
-      </div>
-
-      <!-- Battery (only shown when allocated) -->
-      <div id="battery-section" class="field">
-        <label>Battery Storage</label>
-        <div class="choices">
-          <div class="choice" id="choice-none" onclick="pickBattery('none',this)">
-            <div class="ck">A</div><div><div class="ct">No battery</div></div>
-          </div>
-          <div class="choice" id="choice-125kw" onclick="pickBattery('125kw',this)">
-            <div class="ck">B</div><div><div class="ct">125 kW System</div><div class="cd">Demand charge mitigation · 75%</div></div>
-          </div>
-          <div class="choice" id="choice-250kw" onclick="pickBattery('250kw',this)">
-            <div class="ck">C</div><div><div class="ct">250 kW System</div><div class="cd">Demand charge mitigation · 75%</div></div>
-          </div>
-        </div>
-        <div class="ferr" id="e-battery">Please select a battery option.</div>
+    <div class="field">
+      <label>Product</label>
+      <div class="prod-toggle">
+        <button class="prod-btn active" id="prod-base" onclick="pickProduct('base',this)">Base Station (200 kW)</button>
+        <button class="prod-btn" id="prod-re400" onclick="pickProduct('re400',this)">RE400 (400 kW)</button>
       </div>
     </div>
 
-    <hr class="sidebar-divider">
-
-    <div class="sidebar-section">
-      <button class="btn btn-primary" id="run-btn" onclick="runForecast()">
-        <svg viewBox="0 0 14 14" fill="none" style="width:14px;height:14px;"><path d="M1 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Generate SPD Forecast
-      </button>
-      <div class="ferr" id="e-run" style="text-align:center;"></div>
+    <div class="field">
+      <label>Battery Storage</label>
+      <div class="choices">
+        <div class="choice sel" id="batt-none" onclick="pickBattery('none',this)">
+          <div class="ck">A</div><div><div class="ct">No Battery</div></div>
+        </div>
+        <div class="choice" id="batt-125" onclick="pickBattery('125kw',this)">
+          <div class="ck">B</div><div><div class="ct">125 kW Battery</div></div>
+        </div>
+        <div class="choice" id="batt-250" onclick="pickBattery('250kw',this)">
+          <div class="ck">C</div><div><div class="ct">250 kW Battery</div></div>
+        </div>
+      </div>
     </div>
 
-  </aside>
-
-  <!-- RESULTS PANE -->
-  <main class="results-pane" id="results-pane">
-    <div class="results-empty" id="results-empty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-5"/></svg>
-      <p>Add sites, configure your project, and click <strong>Generate SPD Forecast</strong> to see the 10-year utilization outlook.</p>
+    <div class="field">
+      <label>LCFS Credits</label>
+      <div class="check-card" id="chk-lcfs" onclick="toggleLCFS(this)">
+        <div class="chkbox" id="lcfs-box"></div>
+        <div class="check-card-body">
+          <div class="chk-title">LCFS Eligible</div>
+          <div class="chk-sub">CA, OR, WA — reduces CaaS fee · adds $20K/site/yr for Direct Purchase</div>
+        </div>
+      </div>
     </div>
-    <div id="results-content" style="display:none;"></div>
-  </main>
+  </div>
+
+  <hr class="sidebar-divider">
+
+  <!-- REVENUE INPUTS -->
+  <div class="sidebar-section">
+    <div class="sidebar-title">Revenue</div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Sessions per Day (portfolio)</span>
+        <span class="slider-val" id="val-spd">25</span>
+      </div>
+      <input type="range" id="sl-spd" min="10" max="200" value="25" step="1"
+        oninput="S.spd=+this.value;document.getElementById('val-spd').textContent=this.value;trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>10</span><span>100</span><span>200</span></div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Charging Price ($/kWh)</span>
+        <span class="slider-val" id="val-cp">$0.50</span>
+      </div>
+      <input type="range" id="sl-cp" min="0.25" max="0.75" value="0.50" step="0.01"
+        oninput="S.chargingPrice=+this.value;document.getElementById('val-cp').textContent='$'+parseFloat(this.value).toFixed(2);trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>$0.25</span><span>$0.50</span><span>$0.75</span></div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Basket Size</span>
+        <span class="slider-val" id="val-basket">$50</span>
+      </div>
+      <input type="range" id="sl-basket" min="10" max="200" value="50" step="5"
+        oninput="S.basketSize=+this.value;document.getElementById('val-basket').textContent='$'+this.value;trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>$10</span><span>$100</span><span>$200</span></div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Incremental In-Store Conversion</span>
+        <span class="slider-val" id="val-conv">10%</span>
+      </div>
+      <input type="range" id="sl-conv" min="0" max="25" value="10" step="0.5"
+        oninput="S.convRate=+this.value/100;document.getElementById('val-conv').textContent=parseFloat(this.value).toFixed(1)+'%';trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>0%</span><span>12.5%</span><span>25%</span></div>
+    </div>
+  </div>
+
+  <hr class="sidebar-divider">
+
+  <!-- COST INPUTS -->
+  <div class="sidebar-section">
+    <div class="sidebar-title">Costs</div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Electricity Price ($/kWh)</span>
+        <span class="slider-val" id="val-elec">$0.10</span>
+      </div>
+      <input type="range" id="sl-elec" min="0.05" max="0.25" value="0.10" step="0.01"
+        oninput="S.elecPrice=+this.value;document.getElementById('val-elec').textContent='$'+parseFloat(this.value).toFixed(2);trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>$0.05</span><span>$0.15</span><span>$0.25</span></div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-label">Demand Charge ($/kW/mo)</span>
+        <span class="slider-val" id="val-demand">$0</span>
+      </div>
+      <input type="range" id="sl-demand" min="0" max="30" value="0" step="0.5"
+        oninput="S.demandRate=+this.value;document.getElementById('val-demand').textContent='$'+parseFloat(this.value).toFixed(this.value%1===0?0:1);trackRange(this);maybeRerender();">
+      <div class="slider-rl"><span>$0</span><span>$15</span><span>$30/kW</span></div>
+    </div>
+
+    <!-- DP-only capex inputs -->
+    <div id="dp-capex-section">
+      <div class="sidebar-title" style="margin-top:6px;">CapEx (Direct Purchase)</div>
+
+      <div class="toggle-pair">
+        <div class="check-card" id="chk-design" onclick="toggleCheck('design',this)">
+          <div class="chkbox" id="design-box"></div>
+          <div class="check-card-body">
+            <div class="chk-title">Design Services</div>
+            <div class="chk-sub">$31,500 / site</div>
+          </div>
+        </div>
+        <div class="check-card" id="chk-epc" onclick="toggleCheck('epc',this)">
+          <div class="chkbox" id="epc-box"></div>
+          <div class="check-card-body">
+            <div class="chk-title">EPC Management</div>
+            <div class="chk-sub">$40,000 / site</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slider-row" style="margin-top:6px;">
+        <div class="slider-header">
+          <span class="slider-label">Construction (per site)</span>
+          <span class="slider-val" id="val-constr">$200K</span>
+        </div>
+        <input type="range" id="sl-constr" min="0" max="300000" value="200000" step="5000"
+          oninput="S.construction=+this.value;document.getElementById('val-constr').textContent='$'+Math.round(this.value/1000)+'K';trackRange(this);maybeRerender();">
+        <div class="slider-rl"><span>$0</span><span>$150K</span><span>$300K</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE BUTTON -->
+  <div class="sidebar-section">
+    <button class="btn btn-primary" id="run-btn" onclick="runForecast()">
+      <svg viewBox="0 0 14 14" fill="none" style="width:14px;height:14px;flex-shrink:0;"><path d="M1 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate P&amp;L
+    </button>
+  </div>
+
+</aside>
+
+<!-- RESULTS PANE -->
+<main class="results-pane" id="results-pane">
+  <div class="results-empty" id="results-empty">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-5"/></svg>
+    <p>Configure your portfolio and click <strong>Generate P&amp;L</strong> to see the 10-year outlook.</p>
+  </div>
+  <div id="results-content" style="display:none;"></div>
+</main>
 
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════════
-// ── STATE ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
 const S = {
-  sites: [],
-  siteAddress: '',
-  stalls: 4,
-  budget: 'allocated',
-  caasProduct: null,
-  battery: null,
-  retailPrograms: [],
+  numSites: 1,
+  ports: 4,
+  budget: 'dp',        // 'dp' = Direct Purchase, 'caas' = CaaS
+  product: 'base',     // 'base' | 're400'
+  battery: 'none',     // 'none' | '125kw' | '250kw'
+  lcfs: false,
+  spd: 25,             // total portfolio sessions/day
+  chargingPrice: 0.50,
+  basketSize: 50,
+  convRate: 0.10,
+  elecPrice: 0.10,
+  demandRate: 0,
+  designServices: false,
+  epcMgmt: false,
+  construction: 200000,
 };
 
-// ── CONSTANTS ────────────────────────────────────────────────
+let _rendered = false;
+
+// ══════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════
 const KWH_PER_SESSION = 35;
 const UPTIME = 0.995;
-const PAYMENT_PROCESSING_FEE = 0.065;
-const SESSION_GROWTH_RATE = 0.10;
-const PRICE_INFLATION = 0.03;
-const COMPLIANCE_FEES_ANNUAL = 550;
-const OPS_EXPENSES_ANNUAL = 56000;
+const PAYMENT_FEE = 0.065;
+const GROWTH = 0.10;
+const INFLATION = 0.03;
+const BASKET_MARGIN = 0.10;
+const DESIGN_COST = 31500;
+const EPC_COST = 40000;
+const LCFS_ANNUAL = 20000; // per site per year (DP only)
 
-const TABLE_FEES = {
-  re400: { 4:{noLcfs:187000,lcfs:117000}, 6:{noLcfs:258000,lcfs:154000}, 8:{noLcfs:329000,lcfs:191000} },
-  base:  { 4:{noLcfs:116000,lcfs: 76000}, 6:{noLcfs:160000,lcfs:101000}, 8:{noLcfs:197000,lcfs:118000} },
+// ══════════════════════════════════════════════════════════
+// CAAS FEE LOOKUP TABLE  (from CaaS_GoalSeek_12pct_IRR)
+// Rows: product × battery × lcfs × ports
+// Columns: Year-1 SPD 10,15,20,25,30,35,40,45,50
+// ══════════════════════════════════════════════════════════
+const CAAS_SPD_COLS = [10,15,20,25,30,35,40,45,50];
+const CAAS_TABLE = {
+  base: {
+    none: {
+      on:  {4:[80330,77467,74605,71743,68881,66019,63156,60292,57391],
+            6:[105029,102167,99304,96442,93580,90718,87856,84993,82131],
+            8:[125728,122866,120004,117141,114279,111417,108555,105693,102830]},
+      off: {4:[114478,114478,114478,114478,114478,114478,114478,114478,114478],
+            6:[149083,149083,149083,149083,149083,149083,149083,149083,149083],
+            8:[179688,179688,179688,179688,179688,179688,179688,179688,179688]}
+    },
+    '125kw': {
+      on:  {4:[124549,118739,112929,107119,101310,95500,89690,83880,78070],
+            6:[150454,144644,138834,133025,127215,121405,115595,109785,103975],
+            8:[172359,166550,160740,154930,149120,143310,137500,131691,125881]},
+      off: {4:[153569,153569,153569,153569,153569,153569,153569,153569,153569],
+            6:[188174,188174,188174,188174,188174,188174,188174,188174,188174],
+            8:[218780,218780,218780,218780,218780,218780,218780,218780,218780]}
+    },
+    '250kw': {
+      on:  {4:[131352,125542,119732,113922,108112,102302,96493,90683,84873],
+            6:[157257,151447,145637,139827,134018,128208,122398,116588,110778],
+            8:[179162,173352,167543,161733,155923,150113,144303,138493,132684]},
+      off: {4:[160372,160372,160372,160372,160372,160372,160372,160372,160372],
+            6:[194977,194977,194977,194977,194977,194977,194977,194977,194977],
+            8:[225582,225582,225582,225582,225582,225582,225582,225582,225582]}
+    }
+  },
+  re400: {
+    none: {
+      on:  {4:[109242,107585,105928,104271,102613,100956,99299,97638,95902],
+            6:[143475,141817,140160,138503,136846,135189,133532,131874,130217],
+            8:[177707,176050,174393,172736,171078,169421,167764,166107,164450]},
+      off: {4:[160792,160792,160792,160792,160792,160792,160792,160792,160792],
+            6:[214837,214837,214837,214837,214837,214837,214837,214837,214837],
+            8:[268881,268881,268881,268881,268881,268881,268881,268881,268881]}
+    },
+    '125kw': {
+      on:  {4:[242345,240687,239030,237373,235716,234059,232401,230741,229004],
+            6:[236215,234558,232901,231243,229586,227929,226272,224615,222957],
+            8:[230085,228428,226771,225114,223457,221799,220142,218485,216828]},
+      off: {4:[293895,293895,293895,293895,293895,293895,293895,293895,293895],
+            6:[307577,307577,307577,307577,307577,307577,307577,307577,307577],
+            8:[321260,321260,321260,321260,321260,321260,321260,321260,321260]}
+    },
+    '250kw': {
+      on:  {4:[306846,305188,303531,301874,300217,298560,296902,295242,293505],
+            6:[300716,299059,297402,295744,294087,292430,290773,289116,287458],
+            8:[294586,292929,291272,289615,287958,286300,284643,282986,281329]},
+      off: {4:[358396,358396,358396,358396,358396,358396,358396,358396,358396],
+            6:[372078,372078,372078,372078,372078,372078,372078,372078,372078],
+            8:[385761,385761,385761,385761,385761,385761,385761,385761,385761]}
+    }
+  }
 };
-const TABLE_STALLS = [4,6,8];
-const LCFS_STATES = ['CA','OR','WA','CALIFORNIA','OREGON','WASHINGTON'];
 
-const SPD_GRID_DRAW_TABLE = [
-  [10,210],[20,251],[30,284],[40,304],[50,319],[60,331],[70,343.45],[80,356.37]
-];
+// Bilinear interpolation into CaaS table (per site annual fee)
+function lookupCaaS(product, battery, lcfs, ports, spdPerSite) {
+  const tbl = CAAS_TABLE[product][battery][lcfs ? 'on' : 'off'];
+  const sKeys = CAAS_SPD_COLS;
 
+  // Interpolate/extrapolate over port axis at a given SPD column index
+  function atSpdI(portCount, si) {
+    if (portCount <= 4) {
+      if (portCount === 4) return tbl[4][si];
+      const slope = (tbl[4][si] - tbl[6][si]) / 2; // per port below 4, extrapolate same slope
+      return tbl[4][si] + (4 - portCount) * slope;
+    }
+    if (portCount >= 8) {
+      if (portCount === 8) return tbl[8][si];
+      const slope = (tbl[8][si] - tbl[6][si]) / 2;
+      return tbl[8][si] + (portCount - 8) * slope;
+    }
+    if (portCount <= 6) {
+      const f = (portCount - 4) / 2;
+      return tbl[4][si] * (1 - f) + tbl[6][si] * f;
+    }
+    const f = (portCount - 6) / 2;
+    return tbl[6][si] * (1 - f) + tbl[8][si] * f;
+  }
+
+  // Interpolate/extrapolate over SPD axis
+  function atPS(portCount, spd) {
+    if (spd <= sKeys[0]) {
+      const d = atSpdI(portCount, 1) - atSpdI(portCount, 0);
+      return atSpdI(portCount, 0) + (spd - sKeys[0]) * d / (sKeys[1] - sKeys[0]);
+    }
+    const last = sKeys.length - 1;
+    if (spd >= sKeys[last]) {
+      const d = atSpdI(portCount, last) - atSpdI(portCount, last - 1);
+      return atSpdI(portCount, last) + (spd - sKeys[last]) * d / (sKeys[last] - sKeys[last - 1]);
+    }
+    for (let i = 0; i < sKeys.length - 1; i++) {
+      if (spd >= sKeys[i] && spd <= sKeys[i + 1]) {
+        const f = (spd - sKeys[i]) / (sKeys[i + 1] - sKeys[i]);
+        return atSpdI(portCount, i) * (1 - f) + atSpdI(portCount, i + 1) * f;
+      }
+    }
+  }
+
+  return Math.max(0, atPS(ports, spdPerSite));
+}
+
+// ══════════════════════════════════════════════════════════
+// HARDWARE & OPS COST (per site, from EE pricing sheet)
+// Base Station: charger unit = 2 ports, $46k/unit; Switchgear $17k; PowerNode $9.5k; Shipping $6k
+// RE400: $47.5k/port; Shipping $6k (no switchgear or PowerNode)
+// Battery: 125kW = $146.5k hw + $90k O&M; 250kW = $186k hw + $90k O&M
+// Note: PowerNode Zero not used with battery (per pricing sheet)
+// ══════════════════════════════════════════════════════════
+function hwPerSite(product, ports, battery) {
+  let hw;
+  if (product === 'base') {
+    const units = Math.ceil(ports / 2);
+    hw = 17000 + units * 46000 + 6000; // switchgear + charger units + shipping
+    if (battery === 'none') hw += 9500;  // PowerNode Zero (omitted when battery present)
+  } else {
+    // RE400
+    hw = ports * 47500 + 6000; // charger units + shipping
+  }
+  if (battery === '125kw') hw += 146500 + 90000; // 125kW battery: hw + 10yr O&M prepaid
+  if (battery === '250kw') hw += 186000 + 90000; // 250kW battery
+  return hw;
+}
+
+// Annual operations cost per site per year
+// Base Station: [4→$14k, 6→$27k, 8→$36k] — interpolated/extrapolated
+// RE400: $12k per port per year
+function opsPerSite(product, ports) {
+  if (product === 're400') return ports * 12000;
+  if (ports <= 4) return 14000 + (ports - 4) * 6500;
+  if (ports <= 6) return 14000 + (ports - 4) * (27000 - 14000) / 2;
+  if (ports <= 8) return 27000 + (ports - 6) * (36000 - 27000) / 2;
+  return 36000 + (ports - 8) * 4500;
+}
+
+// ══════════════════════════════════════════════════════════
+// PEAK DEMAND — RE400 (from Watt Wise / RetailEdge sizing analysis)
+// Tables: [spd, no-battery grid draw kW] per site, p95 CDF
+// Battery shaves exactly its rated kW from peak (verified across all data points)
+// 8-port: use 6-port table at SPD × 1.5
+// ══════════════════════════════════════════════════════════
+const RE400_DRAW_NONE = {
+  2: [[10,212],[20,237],[25,254],[30,256],[35,270],[40,275],[45,285],[55,294],[60,297],[65,303]],
+  4: [[10,211],[20,247],[30,294],[40,315],[50,348],[60,368],[70,400],[80,418],[90,433],[100,450],[110,472],[120,481],[132,498]],
+  6: [[40,321],[50,351],[60,387],[70,413],[80,438],[90,473],[100,509],[110,533],[120,546],[130,571],[140,585],[150,598],[160,612],[170,622],[180,626],[190,638],[200,648]],
+};
+const BATTERY_SHAVE_KW = { none: 0, '125kw': 125, '250kw': 250 };
+
+// Linear interpolation/extrapolation into a [[spd, kw], ...] table
+function interpTable(tbl, spd) {
+  if (spd <= tbl[0][0]) {
+    // Extrapolate below using slope of first two points
+    const slope = (tbl[1][1] - tbl[0][1]) / (tbl[1][0] - tbl[0][0]);
+    return Math.max(0, tbl[0][1] + (spd - tbl[0][0]) * slope);
+  }
+  const last = tbl.length - 1;
+  if (spd >= tbl[last][0]) {
+    const slope = (tbl[last][1] - tbl[last-1][1]) / (tbl[last][0] - tbl[last-1][0]);
+    return tbl[last][1] + (spd - tbl[last][0]) * slope;
+  }
+  for (let i = 0; i < last; i++) {
+    if (spd >= tbl[i][0] && spd <= tbl[i+1][0]) {
+      const f = (spd - tbl[i][0]) / (tbl[i+1][0] - tbl[i][0]);
+      return tbl[i][1] + f * (tbl[i+1][1] - tbl[i][1]);
+    }
+  }
+}
+
+// RE400 no-battery draw per site, interpolating between 2/4/6/8-port tables
+function re400NoBattDraw(ports, spdPerSite) {
+  // 8-port: use 6-port table at SPD × 1.5
+  if (ports === 8) return interpTable(RE400_DRAW_NONE[6], spdPerSite * 1.5);
+  // Extrapolate above 8 ports using 8-port scaling
+  if (ports > 8) return re400NoBattDraw(8, spdPerSite) * (ports / 8);
+  // Direct table lookups
+  if (ports <= 2) return interpTable(RE400_DRAW_NONE[2], spdPerSite);
+  if (ports === 4) return interpTable(RE400_DRAW_NONE[4], spdPerSite);
+  if (ports === 6) return interpTable(RE400_DRAW_NONE[6], spdPerSite);
+  // Interpolate between adjacent port tables
+  if (ports < 4) {
+    const f = (ports - 2) / 2;
+    return interpTable(RE400_DRAW_NONE[2], spdPerSite) * (1-f) + interpTable(RE400_DRAW_NONE[4], spdPerSite) * f;
+  }
+  // ports 4-6
+  const f = (ports - 4) / 2;
+  return interpTable(RE400_DRAW_NONE[4], spdPerSite) * (1-f) + interpTable(RE400_DRAW_NONE[6], spdPerSite) * f;
+}
+
+// ── Base Station: existing calibration table (4-port baseline), scaled by port count
+const BS_DRAW_TABLE = [[10,210],[20,251],[30,284],[40,304],[50,319],[60,331],[70,343],[80,356]];
+function bsNoBattDraw(ports, spdPerSite) {
+  return interpTable(BS_DRAW_TABLE, spdPerSite) * (ports / 4);
+}
+
+// Peak demand per site after battery shaving, then multiply by numSites for portfolio
+function peakDemandKw(totalSPD, numSites, ports, product, battery) {
+  const perSite = totalSPD / numSites;
+  const noBatt  = product === 're400'
+    ? re400NoBattDraw(ports, perSite)
+    : bsNoBattDraw(ports, perSite);
+  const netPerSite = Math.max(0, noBatt - BATTERY_SHAVE_KW[battery]);
+  return netPerSite * numSites;
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILIZATION
+// Max SPD/port: RE400=30, Base Station=17
+// ══════════════════════════════════════════════════════════
+function calcUtilization(totalSPD, numSites, ports, product) {
+  const maxPerPort = product === 're400' ? 30 : 17;
+  const maxCap = numSites * ports * maxPerPort;
+  if (!maxCap) return 0;
+  let sum = 0;
+  for (let y = 1; y <= 10; y++) sum += totalSPD * Math.pow(1 + GROWTH, y - 1);
+  return Math.min(100, (sum / 10 / maxCap) * 100);
+}
+
+// ══════════════════════════════════════════════════════════
+// IRR
+// ══════════════════════════════════════════════════════════
+function calculateIRR(cashFlows) {
+  let rate = 0.1;
+  for (let i = 0; i < 1000; i++) {
+    let npv = 0, dnpv = 0;
+    for (let t = 0; t < cashFlows.length; t++) {
+      npv  += cashFlows[t] / Math.pow(1 + rate, t);
+      dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+    }
+    if (Math.abs(dnpv) < 1e-12) break;
+    const nr = rate - npv / dnpv;
+    if (Math.abs(nr - rate) < 1e-7) { rate = nr; break; }
+    rate = nr;
+  }
+  if (!isFinite(rate) || rate < -1 || rate > 10) return NaN;
+  return rate;
+}
+
+// ══════════════════════════════════════════════════════════
+// P&L MATH — DIRECT PURCHASE
+// ══════════════════════════════════════════════════════════
+function computeDP(s) {
+  const { numSites, ports, product, battery, lcfs, spd, chargingPrice,
+          basketSize, convRate, elecPrice, demandRate, designServices, epcMgmt, construction } = s;
+
+  const hwSite   = hwPerSite(product, ports, battery);
+  const opsSite  = opsPerSite(product, ports);
+  const totalHw  = hwSite * numSites;
+  const designC  = designServices ? DESIGN_COST * numSites : 0;
+  const epcC     = epcMgmt       ? EPC_COST * numSites    : 0;
+  const constrC  = construction * numSites;
+  const totalCapEx = totalHw + designC + epcC + constrC;
+
+  const years = [];
+  const cashFlows = [-totalCapEx];
+
+  for (let y = 1; y <= 10; y++) {
+    const gr  = Math.pow(1 + GROWTH, y - 1);
+    const inf = Math.pow(1 + INFLATION, y - 1);
+    const annSessions   = spd * 365 * gr;
+    const kwhDelivered  = annSessions * KWH_PER_SESSION * UPTIME;
+    const adjCP         = chargingPrice * inf;
+    const adjEC         = elecPrice * inf;
+    const adjBasket     = basketSize * inf;
+
+    const grossCharging = kwhDelivered * adjCP;
+    const payFee        = grossCharging * PAYMENT_FEE;
+    const netCharging   = grossCharging - payFee;
+    const instoreRev    = spd * convRate * 365 * gr * adjBasket * BASKET_MARGIN;
+    const lcfsRev       = lcfs ? LCFS_ANNUAL * numSites : 0;
+
+    const energyCost    = (kwhDelivered / 0.9) * adjEC;
+    const demandCost    = peakDemandKw(spd * gr, numSites, ports, product, battery) * demandRate * 12;
+    const opsCost       = opsSite * numSites;
+    const totalOpEx     = payFee + energyCost + demandCost + opsCost;
+
+    const cashFlow = grossCharging + instoreRev + lcfsRev - totalOpEx;
+    cashFlows.push(cashFlow);
+    years.push({
+      y, annSessions: Math.round(annSessions),
+      grossCharging, payFee, netCharging, instoreRev, lcfsRev,
+      energyCost, demandCost, opsCost, totalOpEx, cashFlow
+    });
+  }
+
+  // Breakeven
+  let cum = -totalCapEx, breakeven = null;
+  for (let i = 0; i < years.length; i++) {
+    const prev = cum;
+    cum += years[i].cashFlow;
+    if (cum >= 0 && breakeven === null && years[i].cashFlow > 0) {
+      breakeven = i + Math.abs(prev) / years[i].cashFlow;
+    }
+  }
+
+  return {
+    years, totalCapEx, totalHw, designC, epcC, constrC,
+    irr: calculateIRR(cashFlows), breakeven,
+    util: calcUtilization(spd, numSites, ports, product)
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// P&L MATH — CaaS
+// ══════════════════════════════════════════════════════════
+function computeCaaS(s) {
+  const { numSites, ports, product, battery, lcfs, spd, chargingPrice,
+          basketSize, convRate, elecPrice, demandRate } = s;
+
+  const spdPerSite      = spd / numSites;
+  const caasPerSite     = lookupCaaS(product, battery, lcfs, ports, spdPerSite);
+  const totalCaaSAnnual = caasPerSite * numSites;
+
+  const years = [];
+  for (let y = 1; y <= 10; y++) {
+    const gr  = Math.pow(1 + GROWTH, y - 1);
+    const inf = Math.pow(1 + INFLATION, y - 1);
+    const annSessions   = spd * 365 * gr;
+    const kwhDelivered  = annSessions * KWH_PER_SESSION * UPTIME;
+    const adjCP         = chargingPrice * inf;
+    const adjEC         = elecPrice * inf;
+    const adjBasket     = basketSize * inf;
+
+    const grossCharging = kwhDelivered * adjCP;
+    const payFee        = grossCharging * PAYMENT_FEE;
+    const netCharging   = grossCharging - payFee;
+    const instoreRev    = spd * convRate * 365 * gr * adjBasket * BASKET_MARGIN;
+
+    const energyCost    = (kwhDelivered / 0.9) * adjEC;
+    const demandCost    = peakDemandKw(spd * gr, numSites, ports, product, battery) * demandRate * 12;
+    const caasOpEx      = totalCaaSAnnual; // fixed annual fee
+    const totalOpEx     = payFee + energyCost + demandCost + caasOpEx;
+
+    const netProfit = grossCharging + instoreRev - totalOpEx;
+    years.push({
+      y, annSessions: Math.round(annSessions),
+      grossCharging, payFee, netCharging, instoreRev,
+      energyCost, demandCost, caasOpEx, totalOpEx, netProfit
+    });
+  }
+
+  return {
+    years, caasPerSite, totalCaaSAnnual,
+    util: calcUtilization(spd, numSites, ports, product)
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// FORMATTERS
+// ══════════════════════════════════════════════════════════
+function fmtC(v) {
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v < 0 ? '-' : '') + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return (v < 0 ? '-' : '') + '$' + Math.round(abs / 1e3) + 'K';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+}
+function fmtFull(v) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+}
+function fmtNum(v) { return new Intl.NumberFormat('en-US').format(Math.round(v)); }
+
+function trackRange(input) {
+  const pct = ((input.value - input.min) / (input.max - input.min)) * 100;
+  input.style.background = `linear-gradient(to right,var(--gold) ${pct}%,var(--s3) ${pct}%)`;
+}
+
+// ══════════════════════════════════════════════════════════
+// CHART
+// ══════════════════════════════════════════════════════════
 let _charts = {};
-let _mapInstance = null;
-
-// ── FORMATTERS ───────────────────────────────────────────────
-function fmtCurrency(v){const abs=Math.abs(v);let s;if(abs>=1000000)s='$'+(v/1000000).toFixed(1)+'M';else if(abs>=1000)s='$'+Math.round(v/1000)+'K';else s=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);return s;}
-function fmtFull(v){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);}
-function fmtNum(v){return new Intl.NumberFormat('en-US').format(v);}
-function fmtFee(n,capped){return '$'+Math.round(n).toLocaleString('en-US')+(capped?'+':'');}
-
-// ── HELPERS ──────────────────────────────────────────────────
-function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2600);}
-function trackRange(input){const pct=((input.value-input.min)/(input.max-input.min))*100;input.style.background=`linear-gradient(to right,var(--gold) ${pct}%,var(--s3) ${pct}%)`;}
-
-function isLCFS(address){const u=address.toUpperCase();return LCFS_STATES.some(s=>new RegExp('\\b'+s+'\\b').test(u));}
-function lookupFee(product,stalls,lcfs){
-  const capped=stalls>8;const snapKey=capped?8:(TABLE_STALLS.includes(stalls)?stalls:8);
-  const row=TABLE_FEES[product]?.[snapKey]||TABLE_FEES.base[8];
-  const annual=lcfs?row.lcfs:row.noLcfs;
-  return{annual,monthly:annual/12,total10:annual*10,lcfs,capped,snapStalls:snapKey};
+function renderChart(id, type, data, options) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+  const el = document.getElementById(id);
+  if (!el) return;
+  _charts[id] = new Chart(el, { type, data, options });
 }
-function interpolateGridDraw(spd){
-  const t=SPD_GRID_DRAW_TABLE;if(spd<=t[0][0])return t[0][1];if(spd>=t[t.length-1][0])return t[t.length-1][1];
-  for(let i=0;i<t.length-1;i++){if(spd>=t[i][0]&&spd<=t[i+1][0]){const frac=(spd-t[i][0])/(t[i+1][0]-t[i][0]);return t[i][1]+frac*(t[i+1][1]-t[i][1]);}}
-  return t[t.length-1][1];
-}
-function calculateIRR(cashFlows){let rate=0.1;for(let i=0;i<1000;i++){let npv=0,dnpv=0;for(let t=0;t<cashFlows.length;t++){npv+=cashFlows[t]/Math.pow(1+rate,t);dnpv-=t*cashFlows[t]/Math.pow(1+rate,t+1);}if(Math.abs(dnpv)<1e-12)break;const nr=rate-npv/dnpv;if(Math.abs(nr-rate)<1e-7){rate=nr;break;}rate=nr;}if(!isFinite(rate)||rate<-1||rate>10)return NaN;return rate;}
 
-// ── SIDEBAR PICKERS ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// RENDER — DIRECT PURCHASE
+// ══════════════════════════════════════════════════════════
+function renderDP(r) {
+  const { years, totalCapEx, totalHw, designC, epcC, constrC, irr, breakeven, util } = r;
+  const irrValid = isFinite(irr) && !isNaN(irr);
+  const totalRevenue  = years.reduce((a, y) => a + y.grossCharging + y.instoreRev + y.lcfsRev, 0);
+  const totalProfit   = years.reduce((a, y) => a + y.cashFlow, 0);
+  const totalInstore  = years.reduce((a, y) => a + y.instoreRev, 0);
+  const productLabel  = S.product === 're400' ? 'RE400 (400 kW/port)' : 'Base Station (200 kW/port)';
+  const battLabel     = { none: 'No Battery', '125kw': '125 kW Battery', '250kw': '250 kW Battery' }[S.battery];
+
+  let html = `
+    <div class="results-hero">
+      <h2><em>Direct Purchase</em> — ${S.numSites}-Site Portfolio</h2>
+      <p>${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card featured">
+        <div class="metric-label">10-Year IRR</div>
+        <div class="metric-value ${irrValid && irr >= 0 ? 'gold' : 'red'}">${irrValid ? (irr * 100).toFixed(1) + '%' : '< 0%'}</div>
+        <div class="metric-sub">Internal rate of return</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Payback Period</div>
+        <div class="metric-value">${breakeven !== null ? breakeven.toFixed(1) + 'y' : '> 10y'}</div>
+        <div class="metric-sub">Years to recover CapEx</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total CapEx</div>
+        <div class="metric-value">${fmtC(totalCapEx)}</div>
+        <div class="metric-sub">Upfront investment (all sites)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">10-Year Revenue</div>
+        <div class="metric-value">${fmtC(totalRevenue)}</div>
+        <div class="metric-sub">Charging + in-store${S.lcfs ? ' + LCFS' : ''}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">10-Year Net Profit</div>
+        <div class="metric-value ${totalProfit >= 0 ? '' : 'red'}">${fmtC(totalProfit)}</div>
+        <div class="metric-sub">After all OpEx, before CapEx</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg Utilization</div>
+        <div class="metric-value">${util.toFixed(1)}%</div>
+        <div class="metric-sub">10-yr avg · max ${S.product === 're400' ? 30 : 17} SPD/port</div>
+      </div>
+    </div>`;
+
+  // P&L table
+  html += `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <div class="card-title">10-Year P&amp;L — Portfolio</div>
+        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+      </div>
+      <button class="btn-export" onclick="exportXlsx('dp-pl-table','DP_PL')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export XLSX
+      </button>
+    </div>
+    <div class="pl-table-wrap">
+      <table class="pl-table" id="dp-pl-table">
+        <thead><tr id="dp-pl-thead"></tr></thead>
+        <tbody id="dp-pl-tbody"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  html += `<div class="chart-card">
+    <div class="card-title" style="margin-bottom:14px;">Cumulative Free Cash Flow</div>
+    <canvas id="dp-cf-chart" style="max-height:280px;"></canvas>
+  </div>`;
+
+  html += `<div class="disclaimer">For internal use only. Hardware pricing from EE standard pricing tables. CaaS fees at 12% pre-tax IRR. © ${new Date().getFullYear()} Electric Era Technologies, Inc.</div>`;
+
+  document.getElementById('results-content').innerHTML = html;
+
+  // Build table
+  const thead = document.getElementById('dp-pl-thead');
+  const tbody  = document.getElementById('dp-pl-tbody');
+  let th = '<th>Line Item</th>';
+  for (let y = 1; y <= 10; y++) th += `<th>Yr ${y}</th>`;
+  th += '<th class="total-col">10-Yr Total</th>';
+  thead.innerHTML = th;
+
+  function row(label, vals, cls = '', noTotal = false) {
+    const total = vals.reduce((a, v) => a + v, 0);
+    let h = `<tr class="${cls}"><td>${label}</td>`;
+    for (const v of vals) {
+      const nc = v < 0 ? ' class="neg"' : v > 0 ? ' class="pos"' : '';
+      h += `<td${nc}>${fmtFull(v)}</td>`;
+    }
+    if (noTotal) h += '<td class="total-col">—</td>';
+    else {
+      const tc = total < 0 ? ' class="neg total-col"' : ' class="total-col"';
+      h += `<td${tc}>${fmtFull(total)}</td>`;
+    }
+    return h + '</tr>';
+  }
+  function numRow(label, vals) {
+    let h = `<tr><td>${label}</td>`;
+    for (const v of vals) h += `<td>${fmtNum(v)}</td>`;
+    h += '<td class="total-col">—</td>';
+    return h + '</tr>';
+  }
+  function sRow(label) { return `<tr class="section-header"><td colspan="12">${label}</td></tr>`; }
+
+  let tb = '';
+  tb += sRow('VOLUME');
+  tb += numRow('Sessions / Day', years.map(y => Math.round(y.annSessions / 365)));
+  tb += numRow('Annual Sessions (portfolio)', years.map(y => y.annSessions));
+  tb += sRow('REVENUE');
+  tb += row('Gross Charging Revenue', years.map(y => y.grossCharging));
+  tb += row('Payment Processing (6.5%)', years.map(y => -y.payFee));
+  tb += row('Net Charging Revenue', years.map(y => y.netCharging), 'subtotal');
+  tb += row('Incremental In-Store Revenue', years.map(y => y.instoreRev));
+  if (S.lcfs) tb += row('LCFS Credits', years.map(y => y.lcfsRev));
+  tb += sRow('OPERATING COSTS');
+  tb += row('Electricity Cost', years.map(y => -y.energyCost));
+  if (S.demandRate > 0) tb += row(`Demand Charges${S.battery !== 'none' ? ` (−${BATTERY_SHAVE_KW[S.battery]} kW shaved)` : ''}`, years.map(y => -y.demandCost));
+  tb += row('Experiences + O&M', years.map(y => -y.opsCost));
+  tb += row('Total Operating Costs', years.map(y => -y.totalOpEx), 'subtotal');
+  tb += sRow('PROFIT');
+  tb += row('Net Operating Profit', years.map(y => y.cashFlow), 'grand-total');
+  tb += sRow('CAPEX (YEAR 0)');
+  tb += row('Hardware & Equipment', years.map((_, i) => i === 0 ? -totalHw : 0));
+  if (S.battery !== 'none') tb += row(`Battery Storage (${battLabel})`, years.map((_, i) => i === 0 ? -(hwPerSite(S.product, S.ports, S.battery) - hwPerSite(S.product, S.ports, 'none')) * S.numSites : 0), '');
+  if (designC > 0) tb += row('Design Services', years.map((_, i) => i === 0 ? -designC : 0));
+  if (epcC > 0)    tb += row('EPC Management', years.map((_, i) => i === 0 ? -epcC : 0));
+  tb += row('Construction', years.map((_, i) => i === 0 ? -constrC : 0));
+  tb += row('Total CapEx', years.map((_, i) => i === 0 ? -totalCapEx : 0), 'subtotal');
+  tb += sRow('CASH FLOW');
+  let cum = -totalCapEx;
+  const cumVals = years.map(y => { cum += y.cashFlow; return cum; });
+  tb += row('Cumulative Free Cash Flow', cumVals, 'grand-total', true);
+  tbody.innerHTML = tb;
+
+  // Chart
+  let cumCF = -totalCapEx;
+  const cumData = years.map(y => { cumCF += y.cashFlow; return Math.round(cumCF); });
+  renderChart('dp-cf-chart', 'line', {
+    labels: years.map(y => 'Year ' + y.y),
+    datasets: [{
+      label: 'Cumulative FCF', data: cumData,
+      borderColor: '#F8B918', backgroundColor: 'rgba(248,185,24,0.08)',
+      borderWidth: 2.5, fill: true, tension: 0.35,
+      pointBackgroundColor: cumData.map(v => v >= 0 ? '#22C55E' : '#EF4444'),
+      pointBorderColor:     cumData.map(v => v >= 0 ? '#22C55E' : '#EF4444'),
+      pointRadius: 5, pointHoverRadius: 7
+    }]
+  }, {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtFull(ctx.parsed.y) } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#888', font: { size: 11 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#888', font: { size: 11 }, callback: v => fmtC(v) },
+           title: { display: true, text: 'Cumulative Free Cash Flow ($)', color: '#7A7A96', font: { size: 11 } } }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER — CaaS
+// ══════════════════════════════════════════════════════════
+function renderCaaS(r) {
+  const { years, caasPerSite, totalCaaSAnnual, util } = r;
+  const totalRevenue = years.reduce((a, y) => a + y.grossCharging + y.instoreRev, 0);
+  const totalProfit  = years.reduce((a, y) => a + y.netProfit, 0);
+  const totalEnergy  = years.reduce((a, y) => a + y.energyCost, 0);
+  const totalCaaS10  = years.reduce((a, y) => a + y.caasOpEx, 0);
+  const productLabel = S.product === 're400' ? 'RE400 (400 kW/port)' : 'Base Station (200 kW/port)';
+  const battLabel    = { none: 'No Battery', '125kw': '125 kW Battery', '250kw': '250 kW Battery' }[S.battery];
+
+  let html = `
+    <div class="results-hero">
+      <h2><em>Charging as a Service</em> — ${S.numSites}-Site Portfolio</h2>
+      <p>${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
+    </div>
+    <div class="fee-callout">
+      <div>
+        <div class="fee-callout-label">Annual CaaS Fee (fixed · 10-yr term)</div>
+        <div style="font-size:.73rem;color:var(--muted);margin-top:3px;">${fmtFull(caasPerSite)}/yr per site · ${S.numSites} site${S.numSites !== 1 ? 's' : ''} · ${S.lcfs ? 'LCFS On' : 'LCFS Off'}</div>
+      </div>
+      <div class="fee-callout-val">${fmtFull(totalCaaSAnnual)}/yr</div>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card featured">
+        <div class="metric-label">10-Year Net Profit</div>
+        <div class="metric-value ${totalProfit >= 0 ? 'gold' : 'red'}">${fmtC(totalProfit)}</div>
+        <div class="metric-sub">After electricity + CaaS fees</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">10-Year Revenue</div>
+        <div class="metric-value">${fmtC(totalRevenue)}</div>
+        <div class="metric-sub">Charging + in-store</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">10-Year Electricity</div>
+        <div class="metric-value">${fmtC(totalEnergy)}</div>
+        <div class="metric-sub">Total energy cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">10-Year CaaS Fees</div>
+        <div class="metric-value">${fmtC(totalCaaS10)}</div>
+        <div class="metric-sub">Total subscription cost</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg Utilization</div>
+        <div class="metric-value">${util.toFixed(1)}%</div>
+        <div class="metric-sub">10-yr avg · max ${S.product === 're400' ? 30 : 17} SPD/port</div>
+      </div>
+    </div>`;
+
+  html += `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <div class="card-title">10-Year P&amp;L — Portfolio</div>
+        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+      </div>
+      <button class="btn-export" onclick="exportXlsx('caas-pl-table','CaaS_PL')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export XLSX
+      </button>
+    </div>
+    <div class="pl-table-wrap">
+      <table class="pl-table" id="caas-pl-table">
+        <thead><tr id="caas-pl-thead"></tr></thead>
+        <tbody id="caas-pl-tbody"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  html += `<div class="chart-card">
+    <div class="card-title" style="margin-bottom:14px;">Cumulative Net Profit</div>
+    <canvas id="caas-cf-chart" style="max-height:280px;"></canvas>
+  </div>`;
+
+  html += `<div class="disclaimer">For internal use only. CaaS fees at 12% pre-tax IRR from EE goal-seek model. © ${new Date().getFullYear()} Electric Era Technologies, Inc.</div>`;
+
+  document.getElementById('results-content').innerHTML = html;
+
+  // Build table
+  const thead = document.getElementById('caas-pl-thead');
+  const tbody  = document.getElementById('caas-pl-tbody');
+  let th = '<th>Line Item</th>';
+  for (let y = 1; y <= 10; y++) th += `<th>Yr ${y}</th>`;
+  th += '<th class="total-col">10-Yr Total</th>';
+  thead.innerHTML = th;
+
+  function row(label, vals, cls = '', noTotal = false) {
+    const total = vals.reduce((a, v) => a + v, 0);
+    let h = `<tr class="${cls}"><td>${label}</td>`;
+    for (const v of vals) {
+      const nc = v < 0 ? ' class="neg"' : v > 0 ? ' class="pos"' : '';
+      h += `<td${nc}>${fmtFull(v)}</td>`;
+    }
+    if (noTotal) h += '<td class="total-col">—</td>';
+    else {
+      const tc = total < 0 ? ' class="neg total-col"' : ' class="total-col"';
+      h += `<td${tc}>${fmtFull(total)}</td>`;
+    }
+    return h + '</tr>';
+  }
+  function numRow(label, vals) {
+    let h = `<tr><td>${label}</td>`;
+    for (const v of vals) h += `<td>${fmtNum(v)}</td>`;
+    h += '<td class="total-col">—</td>';
+    return h + '</tr>';
+  }
+  function sRow(label) { return `<tr class="section-header"><td colspan="12">${label}</td></tr>`; }
+
+  let tb = '';
+  tb += sRow('VOLUME');
+  tb += numRow('Sessions / Day', years.map(y => Math.round(y.annSessions / 365)));
+  tb += numRow('Annual Sessions (portfolio)', years.map(y => y.annSessions));
+  tb += sRow('REVENUE');
+  tb += row('Gross Charging Revenue', years.map(y => y.grossCharging));
+  tb += row('Payment Processing (6.5%)', years.map(y => -y.payFee));
+  tb += row('Net Charging Revenue', years.map(y => y.netCharging), 'subtotal');
+  tb += row('Incremental In-Store Revenue', years.map(y => y.instoreRev));
+  tb += sRow('OPERATING COSTS');
+  tb += row('Electricity Cost', years.map(y => -y.energyCost));
+  if (S.demandRate > 0) tb += row(`Demand Charges${S.battery !== 'none' ? ` (−${BATTERY_SHAVE_KW[S.battery]} kW shaved)` : ''}`, years.map(y => -y.demandCost));
+  tb += row('CaaS Subscription Fee', years.map(y => -y.caasOpEx));
+  tb += row('Total Operating Costs', years.map(y => -y.totalOpEx), 'subtotal');
+  tb += sRow('NET PROFIT');
+  tb += row('Net Operating Profit', years.map(y => y.netProfit), 'grand-total');
+  tb += sRow('CUMULATIVE');
+  let cum = 0;
+  tb += row('Cumulative Net Profit', years.map(y => { cum += y.netProfit; return cum; }), 'grand-total', true);
+  tbody.innerHTML = tb;
+
+  // Chart
+  let cumP = 0;
+  const cumData = years.map(y => { cumP += y.netProfit; return Math.round(cumP); });
+  renderChart('caas-cf-chart', 'line', {
+    labels: years.map(y => 'Year ' + y.y),
+    datasets: [{
+      label: 'Cumulative Net Profit', data: cumData,
+      borderColor: '#F8B918', backgroundColor: 'rgba(248,185,24,0.08)',
+      borderWidth: 2.5, fill: true, tension: 0.35,
+      pointBackgroundColor: cumData.map(v => v >= 0 ? '#22C55E' : '#EF4444'),
+      pointBorderColor:     cumData.map(v => v >= 0 ? '#22C55E' : '#EF4444'),
+      pointRadius: 5, pointHoverRadius: 7
+    }]
+  }, {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmtFull(ctx.parsed.y) } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#888', font: { size: 11 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#888', font: { size: 11 }, callback: v => fmtC(v) },
+           title: { display: true, text: 'Cumulative Net Profit ($)', color: '#7A7A96', font: { size: 11 } } }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN RUNNER
+// ══════════════════════════════════════════════════════════
+function runForecast() {
+  document.getElementById('results-empty').style.display = 'none';
+  const content = document.getElementById('results-content');
+  content.style.display = 'block';
+
+  if (S.budget === 'dp') {
+    renderDP(computeDP(S));
+  } else {
+    renderCaaS(computeCaaS(S));
+  }
+
+  _rendered = true;
+  const btn = document.getElementById('run-btn');
+  if (btn) btn.innerHTML = `<svg viewBox="0 0 14 14" fill="none" style="width:14px;height:14px;flex-shrink:0;"><path d="M1 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Recalculate P&amp;L`;
+}
+
+// Re-render if already showing results
+function maybeRerender() {
+  if (_rendered) runForecast();
+}
+
+// ══════════════════════════════════════════════════════════
+// XLSX EXPORT
+// ══════════════════════════════════════════════════════════
+function exportXlsx(tableId, prefix) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const wb = XLSX.utils.book_new();
+  const wsData = [];
+  table.querySelectorAll('thead tr').forEach(tr =>
+    wsData.push(Array.from(tr.querySelectorAll('th')).map(th => th.textContent.trim()))
+  );
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    if (tr.classList.contains('section-header')) {
+      wsData.push([]);
+      wsData.push([tr.querySelector('td')?.textContent.trim() || '']);
+      return;
+    }
+    wsData.push(Array.from(tr.querySelectorAll('td')).map(td => {
+      const t = td.textContent.trim();
+      const n = parseFloat(t.replace(/[$,]/g, ''));
+      return isNaN(n) ? t : n;
+    }));
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{ wch: 36 }, ...Array(12).fill({ wch: 14 })];
+  XLSX.utils.book_append_sheet(wb, ws, prefix);
+  XLSX.writeFile(wb, `EE_${prefix}_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════
+// UI STATE MANAGEMENT
+// ══════════════════════════════════════════════════════════
 function pickBudget(val, el) {
   S.budget = val;
-  document.querySelectorAll('#choice-allocated,#choice-financed').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('#choice-dp,#choice-caas').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
-  document.getElementById('caas-product-section').style.display = val==='financed' ? 'block' : 'none';
-  document.getElementById('retail-section').style.display = val==='allocated' ? 'block' : 'none';
-  document.getElementById('battery-section').style.display = val==='allocated' ? 'block' : 'none';
-  document.getElementById('e-budget').style.display = 'none';
+  document.getElementById('dp-capex-section').style.display = val === 'dp' ? 'block' : 'none';
+  maybeRerender();
 }
+
 function pickProduct(val, el) {
-  S.caasProduct = val;
-  document.querySelectorAll('#choice-base,#choice-re400').forEach(c=>c.classList.remove('sel'));
-  el.classList.add('sel');
-  document.getElementById('e-caasProduct').style.display = 'none';
+  S.product = val;
+  document.querySelectorAll('#prod-base,#prod-re400').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  maybeRerender();
 }
+
 function pickBattery(val, el) {
   S.battery = val;
-  document.querySelectorAll('#choice-none,#choice-125kw,#choice-250kw').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('#batt-none,#batt-125,#batt-250').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
-  document.getElementById('e-battery').style.display = 'none';
-}
-function toggleRetail(val, el) {
-  S.retailPrograms = S.retailPrograms.filter(p=>p!=='none');
-  document.getElementById('chk-none-retail').classList.remove('sel');
-  document.getElementById('chk-none-retail').querySelector('.chkbox').textContent='';
-  if(S.retailPrograms.includes(val)){S.retailPrograms=S.retailPrograms.filter(p=>p!==val);el.classList.remove('sel');el.querySelector('.chkbox').textContent='';}
-  else{S.retailPrograms.push(val);el.classList.add('sel');el.querySelector('.chkbox').textContent='✓';}
-  document.getElementById('e-retail').style.display = 'none';
-}
-function toggleRetailNone(el){
-  S.retailPrograms=['none'];
-  ['rmn','loyalty','membership'].forEach(v=>{const c=document.getElementById('chk-'+v);if(c){c.classList.remove('sel');c.querySelector('.chkbox').textContent='';}});
-  el.classList.add('sel');el.querySelector('.chkbox').textContent='✓';
-  document.getElementById('e-retail').style.display = 'none';
+  maybeRerender();
 }
 
-// ── INIT ─────────────────────────────────────────────────────
-(function init(){
-  const r=document.getElementById('stall-range');if(r)trackRange(r);
-  // Default to allocated/direct purchase
-  pickBudget('allocated', document.getElementById('choice-allocated'));
-})();
-
-// ── ADDRESS INPUT ────────────────────────────────────────────
-let _acTimer=null,_acActive=-1,_acResults=[],_acAbort=null;
-const _stateAbbr={'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi','MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming','DC':'District of Columbia'};
-function expandStateAbbr(a){return a.replace(/\b([A-Z]{2})\b(?=(\s+\d{5})?(\s*,?\s*USA?)?\s*$)/g,(m,abbr)=>_stateAbbr[abbr]||m);}
-function _buildLabel(props){const parts=[props.housenumber&&props.street?props.housenumber+' '+props.street:(props.street||null),props.city||props.town||props.village||null,props.state||null,props.postcode||null].filter(Boolean);return parts.length>=2?parts.join(', '):(props.name||'');}
-function _closeSugg(){const b=document.getElementById('addr-suggestions');if(b){b.innerHTML='';b.style.display='none';}_acActive=-1;_acResults=[];}
-async function _fetchSugg(query){
-  if(_acAbort)_acAbort.abort();_acAbort=new AbortController();
-  const b=document.getElementById('addr-suggestions');if(b){b.style.display='block';b.innerHTML='<div style="padding:10px 14px;font-size:.82rem;color:var(--muted);">Searching…</div>';}
-  try{
-    const res=await fetch('https://photon.komoot.io/api/?limit=5&lang=en&q='+encodeURIComponent(query),{signal:_acAbort.signal});
-    const data=await res.json();const us=(data?.features||[]).filter(f=>f.properties?.countrycode==='US');
-    _acResults=us.map(f=>({label:_buildLabel(f.properties),raw:f}));_acActive=-1;
-    if(!_acResults.length){if(b)b.innerHTML='<div style="padding:10px 14px;font-size:.82rem;color:#ff7070;">No US addresses found</div>';return;}
-    const esc=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const re=new RegExp('('+esc+')','gi');
-    if(b)b.innerHTML=_acResults.map((item,i)=>`<div style="padding:10px 14px;font-size:.88rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;" data-i="${i}" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''" onmousedown="pickSugg(${i})">${item.label.replace(re,'<em style="color:var(--gold);font-style:normal;">$1</em>')}</div>`).join('');
-  }catch(e){if(e.name!=='AbortError'&&b){b.style.display='none';}}
-}
-function pickSugg(i){const item=_acResults[i];if(!item)return;_closeSugg();if(!S.sites.includes(item.label)){S.sites.push(item.label);if(!S.siteAddress)S.siteAddress=item.label;renderTags();}const inp=document.getElementById('siteAddressInput');if(inp)inp.value='';document.getElementById('e-intake-verify').style.display='none';}
-function onSiteInput(e){const val=e.target.value.trim();clearTimeout(_acTimer);if(val.length<4){_closeSugg();return;}_acTimer=setTimeout(()=>_fetchSugg(val),350);}
-function onSiteKeydown(e){const b=document.getElementById('addr-suggestions');const items=b?b.querySelectorAll('[data-i]'):[];if(e.key==='ArrowDown'){e.preventDefault();_acActive=Math.min(_acActive+1,items.length-1);items.forEach((el,i)=>{el.style.background=i===_acActive?'var(--s3)':''});}else if(e.key==='ArrowUp'){e.preventDefault();_acActive=Math.max(_acActive-1,-1);items.forEach((el,i)=>{el.style.background=i===_acActive?'var(--s3)':''});}else if(e.key==='Enter'){e.preventDefault();if(_acActive>=0&&_acResults[_acActive])pickSugg(_acActive);else addSite();}else if(e.key==='Escape')_closeSugg();}
-async function _verify(raw){try{const res=await fetch('https://photon.komoot.io/api/?limit=1&lang=en&q='+encodeURIComponent(expandStateAbbr(raw)));const data=await res.json();const f=data?.features?.[0];if(!f||f.properties?.countrycode!=='US')return null;return _buildLabel(f.properties);}catch(e){return null;}}
-async function addSite(){const inp=document.getElementById('siteAddressInput');if(!inp)return;const val=inp.value.trim();if(!val)return;_closeSugg();if(S.sites.includes(val)){inp.value='';return;}const btn=document.getElementById('add-btn');if(btn){btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:10px;height:10px;border:1.5px solid rgba(255,255,255,.2);border-top-color:var(--text);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;"></span> Verifying…';}const resolved=await _verify(val);if(btn){btn.disabled=false;btn.innerHTML='+ Add';}if(resolved){if(!S.sites.includes(resolved)){S.sites.push(resolved);if(!S.siteAddress)S.siteAddress=resolved;}inp.value='';document.getElementById('e-intake-verify').style.display='none';}else{const ev=document.getElementById('e-intake-verify');if(ev){ev.textContent=`Could not verify "${val}" as a US address.`;ev.style.display='block';}}renderTags();}
-function removeSite(i){S.sites.splice(i,1);if(!S.sites.length)S.siteAddress='';else S.siteAddress=S.sites[0];renderTags();}
-function renderTags(){const wrap=document.getElementById('site-tags');if(!wrap)return;wrap.innerHTML=S.sites.map((s,i)=>`<span class="site-tag"><span class="site-tag-dot"></span>${s}<button class="site-tag-rm" onmousedown="removeSite(${i})" title="Remove">✕</button></span>`).join('');const ctr=document.getElementById('site-count');if(ctr)ctr.textContent=S.sites.length?S.sites.length+' site'+(S.sites.length>1?'s':'')+' added':'';}
-function handleCSV(file){const r=new FileReader();r.onload=async e=>{const lines=e.target.result.split('\n').map(l=>l.replace(/^["']|["']$/g,'').trim()).filter(Boolean);const start=/address|site|location/i.test(lines[0])?1:0;const toAdd=lines.slice(start).filter(l=>!S.sites.includes(l));if(!toAdd.length)return;const btn=document.getElementById('add-btn');if(btn){btn.disabled=true;btn.innerHTML='Verifying…';}const failed=[];for(const line of toAdd){const res=await _verify(line);if(res){if(!S.sites.includes(res)){S.sites.push(res);if(!S.siteAddress)S.siteAddress=S.sites[0];}}else failed.push(line);await new Promise(r=>setTimeout(r,200));}if(btn){btn.disabled=false;btn.innerHTML='+ Add';}if(failed.length){const ev=document.getElementById('e-intake-verify');if(ev){ev.textContent=`Could not verify ${failed.length} CSV address${failed.length>1?'es':''}.`;ev.style.display='block';}}renderTags();};r.readAsText(file);}
-
-// ── VALIDATION ───────────────────────────────────────────────
-function validate(){
-  let ok=true;
-  const esa=document.getElementById('e-siteAddress');const inp=document.getElementById('siteAddressInput');const ev=document.getElementById('e-intake-verify');
-  if(inp&&inp.value.trim()){if(ev){ev.textContent='Please select an address from suggestions or click Add before continuing.';ev.style.display='block';}ok=false;}
-  if(!S.sites.length){esa.style.display='block';ok=false;}else{esa.style.display='none';if(ev&&!inp?.value.trim())ev.style.display='none';}
-  if(S.budget==='financed'){if(!S.caasProduct){document.getElementById('e-caasProduct').style.display='block';ok=false;}else document.getElementById('e-caasProduct').style.display='none';}
-  if(S.budget==='allocated'){if(!S.retailPrograms.length){document.getElementById('e-retail').style.display='block';ok=false;}else document.getElementById('e-retail').style.display='none';if(!S.battery){document.getElementById('e-battery').style.display='block';ok=false;}else document.getElementById('e-battery').style.display='none';}
-  return ok;
+function toggleLCFS(el) {
+  S.lcfs = !S.lcfs;
+  el.classList.toggle('sel', S.lcfs);
+  document.getElementById('lcfs-box').textContent = S.lcfs ? '✓' : '';
+  document.getElementById('lcfs-box').style.color = S.lcfs ? '#09080A' : 'transparent';
+  maybeRerender();
 }
 
-// ── HEX DATA ─────────────────────────────────────────────────
-let _hexData=null,_hexLoading=null;
-async function loadHexData(){if(_hexData)return _hexData;if(_hexLoading)return _hexLoading;_hexLoading=(async()=>{try{const resp=await fetch('https://raw.githubusercontent.com/jordanmcon/ev-project-intake/caas/hexagon_lookup.json');if(!resp.ok)throw new Error('HTTP '+resp.status);const json=await resp.json();if(!json?.hexagons?.length)throw new Error('Invalid');_hexData=json;_hexData._hexSet=new Set(json.hexagons.map(h=>h.hex_id));_hexData._hexMap=new Map(json.hexagons.map(h=>[h.hex_id,h]));return _hexData;}catch(e){console.warn('Hex load failed:',e.message);_hexData=null;_hexLoading=null;return null;}})();return _hexLoading;}
-function findHex(lat,lon){if(!_hexData?.hexagons)return null;const res=h3.getResolution(_hexData.hexagons[0].hex_id);const cell=h3.latLngToCell(lat,lon,res);return _hexData._hexSet.has(cell)?_hexData._hexMap.get(cell):null;}
-async function lookupSPD(address){try{const expanded=expandStateAbbr(address);const url='https://photon.komoot.io/api/?limit=1&lang=en&q='+encodeURIComponent(expanded);const res=await fetch(url);const data=await res.json();const feature=data?.features?.[0];if(!feature)return null;const[lon,lat]=feature.geometry.coordinates;const props=feature.properties;const displayName=[props.name,props.city||props.town,props.state,props.postcode].filter(Boolean).join(', ');const state=props.state||'';const hexData=await loadHexData();if(hexData){const hex=findHex(lat,lon);if(hex)return{spd:Math.max(5,Math.min(100,Math.round(hex.daily_sessions))),lat,lon,displayName,state,hasData:true};}return{spd:null,lat,lon,displayName,state,hasData:false};}catch(e){return null;}}
-
-// ── CORE P&L MATH (CapEx path) ───────────────────────────────
-function computeCapExPL(spd,chargingPrice,elecCost,hardwareCost,designCost,constructionCost,demandRate,batteryCost,includeLCFS){
-  const UTILITY_UPGRADE_COST=60000;
-  const totalCapEx=hardwareCost+designCost+constructionCost+(batteryCost||0)+UTILITY_UPGRADE_COST;
-  const effectiveDemandRate=(batteryCost>0)?demandRate*0.25:demandRate;
-  const years=[];const cashFlows=[-totalCapEx];
-  for(let y=1;y<=10;y++){
-    const growth=Math.pow(1+SESSION_GROWTH_RATE,y-1);const inflation=Math.pow(1+PRICE_INFLATION,y-1);
-    const annualSessions=spd*365*growth;const kwhDelivered=annualSessions*KWH_PER_SESSION*UPTIME;
-    const adjCP=chargingPrice*inflation;const adjEC=elecCost*inflation;
-    const grossChargingRevenue=kwhDelivered*adjCP;const paymentFee=grossChargingRevenue*PAYMENT_PROCESSING_FEE;
-    const netRevenue=grossChargingRevenue-paymentFee;const lcfsRevenue=includeLCFS?20000:0;
-    const kwhGrid=kwhDelivered/0.9;const energyCost=kwhGrid*adjEC;
-    const peakDraw=interpolateGridDraw(spd*Math.pow(1+SESSION_GROWTH_RATE,y-1));
-    const annualDemandCharge=peakDraw*effectiveDemandRate*12;
-    const opsCost=OPS_EXPENSES_ANNUAL;const complianceCost=COMPLIANCE_FEES_ANNUAL*inflation;
-    const totalOpEx=paymentFee+energyCost+annualDemandCharge+opsCost;
-    const cashFlow=grossChargingRevenue+lcfsRevenue-totalOpEx;
-    cashFlows.push(cashFlow);
-    years.push({y,annualSessions:Math.round(annualSessions),grossChargingRevenue,paymentFee,netRevenue,lcfsRevenue,energyCost,annualDemandCharge,opsCost,complianceCost,totalOpEx,cashFlow});
-  }
-  let breakeven=null,cum=-totalCapEx;
-  for(let i=0;i<years.length;i++){cum+=years[i].cashFlow;if(cum>=0&&breakeven===null){const prev=cum-years[i].cashFlow;breakeven=i+1-(cum/(years[i].cashFlow||1));if(i>0)breakeven=i+(prev/(prev-cum+(years[i].cashFlow)));}}
-  const irr=calculateIRR(cashFlows);
-  return{years,totalCapEx,irr,breakeven,utilityUpgradeCost:UTILITY_UPGRADE_COST};
+function toggleCheck(key, el) {
+  const map = { design: 'designServices', epc: 'epcMgmt' };
+  const boxId = { design: 'design-box', epc: 'epc-box' };
+  S[map[key]] = !S[map[key]];
+  el.classList.toggle('sel', S[map[key]]);
+  document.getElementById(boxId[key]).textContent = S[map[key]] ? '✓' : '';
+  document.getElementById(boxId[key]).style.color = S[map[key]] ? '#09080A' : 'transparent';
+  maybeRerender();
 }
 
-// ── CAAS P&L MATH ────────────────────────────────────────────
-function computeCaaSPLMath(spd,chargingPrice,elecCost,caasAnnualFee){
-  const years=[];
-  for(let y=1;y<=10;y++){
-    const growth=Math.pow(1+SESSION_GROWTH_RATE,y-1);const inf=Math.pow(1+PRICE_INFLATION,y-1);
-    const sessions=spd*365*growth;const kwh=sessions*KWH_PER_SESSION*UPTIME;
-    const grossRevenue=kwh*chargingPrice*inf;const paymentFee=grossRevenue*PAYMENT_PROCESSING_FEE;
-    const netRevenue=grossRevenue-paymentFee;const energyCost=(kwh/0.9)*elecCost*inf;
-    const caasOpEx=caasAnnualFee;const netProfit=netRevenue-energyCost-caasOpEx;
-    years.push({y,sessions:Math.round(sessions),grossRevenue,paymentFee,netRevenue,energyCost,caasOpEx,netProfit});
-  }
-  return{years,totalRevenue:years.reduce((a,y)=>a+y.grossRevenue,0),totalEnergy:years.reduce((a,y)=>a+y.energyCost,0),totalCaaS:years.reduce((a,y)=>a+y.caasOpEx,0),totalProfit:years.reduce((a,y)=>a+y.netProfit,0)};
+function stepSites(delta) {
+  S.numSites = Math.max(1, Math.min(50, S.numSites + delta));
+  updateSitesDisplay();
+  maybeRerender();
 }
 
-// ── PRICING ──────────────────────────────────────────────────
-function calcPricing(){
-  const hardware=S.stalls*55000;const n=S.retailPrograms.filter(p=>p!=='none').length;
-  const ratePerPort=[14000,14000,18000,28000][n]||0;const software=ratePerPort*S.stalls;
-  const batteryPrice=S.battery==='125kw'?123000:S.battery==='250kw'?186000:0;
-  const batteryOM=(S.battery==='125kw'||S.battery==='250kw')?9000:0;
-  const design=31500;const epc=40000;const construction=164500;
-  const subtotal=hardware+software+batteryPrice+batteryOM+design+epc+construction;
-  return{hardware,software,batteryPrice,batteryOM,design,epc,construction,subtotal,ratePerPort,n,batteryOM};
+function updateSitesDisplay() {
+  document.getElementById('sites-display').textContent = S.numSites;
+  document.getElementById('total-ports-meta').textContent = S.numSites * S.ports;
+  document.getElementById('sites-meta').innerHTML =
+    `${S.numSites} site${S.numSites !== 1 ? 's' : ''} · <span id="total-ports-meta">${S.numSites * S.ports}</span> total ports`;
 }
 
-// ── RENDER MAP ───────────────────────────────────────────────
-function renderMap(lat,lon,displayName,mapId){
-  const mapEl=document.getElementById(mapId);if(!mapEl)return;
-  if(_mapInstance){_mapInstance.remove();_mapInstance=null;}
-  setTimeout(()=>{
-    _mapInstance=L.map(mapId,{center:[lat,lon],zoom:13,scrollWheelZoom:false});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(_mapInstance);
-    const icon=L.divIcon({className:'',html:'<div style="background:#F8B918;width:20px;height:20px;border-radius:50%;border:3px solid #1A1A1F;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>',iconSize:[20,20],iconAnchor:[10,10]});
-    L.marker([lat,lon],{icon}).addTo(_mapInstance).bindPopup('<strong>'+displayName+'</strong>');
-    L.circle([lat,lon],{radius:1609.34,color:'#F8B918',fillColor:'#F8B918',fillOpacity:0.07,weight:2,dashArray:'6,4'}).addTo(_mapInstance);
-    setTimeout(()=>_mapInstance?.invalidateSize(),200);
-  },100);
+function updatePortsDisplay() {
+  document.getElementById('ports-display').textContent = S.ports;
+  updateSitesDisplay();
 }
 
-// ── RENDER CHART ─────────────────────────────────────────────
-function renderChart(id,type,data,options){if(_charts[id]){_charts[id].destroy();}_charts[id]=new Chart(document.getElementById(id),{type,data,options});}
-
-// ── MAIN FORECAST RUNNER ─────────────────────────────────────
-async function runForecast(){
-  if(!validate())return;
-  const btn=document.getElementById('run-btn');btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:16px;height:16px;border-width:1.5px;"></span> Loading…';
-  document.getElementById('results-empty').style.display='none';
-  document.getElementById('results-content').style.display='block';
-  document.getElementById('results-content').innerHTML=`<div class="loading-block"><div class="spinner"></div><span>Looking up utilization data for ${S.sites.length} site${S.sites.length>1?'s':''}…</span></div>`;
-
-  // Geocode + hex lookup for all sites
-  const siteResults=[];
-  for(const addr of S.sites){const r=await lookupSPD(addr);siteResults.push({address:addr,result:r});await new Promise(r=>setTimeout(r,1200));}
-
-  btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 14 14" fill="none" style="width:14px;height:14px;"><path d="M1 10l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Regenerate';
-
-  // Compute portfolio SPD
-  const totalSPD=siteResults.reduce((sum,s)=>sum+(s.result&&s.result.spd!==null?s.result.spd:20),0);
-  const missingCount=siteResults.filter(s=>!s.result||s.result.spd===null).length;
-  const portfolioSPD=Math.max(5,totalSPD);
-  const isPortfolio=S.sites.length>1;
-  const firstGeo=siteResults.find(s=>s.result&&s.result.lat)?.result||null;
-
-  // Render
-  if(S.budget==='financed'){
-    renderCaaSResults(siteResults,portfolioSPD,isPortfolio,firstGeo,missingCount);
-  } else {
-    renderCapExResults(siteResults,portfolioSPD,isPortfolio,firstGeo,missingCount);
-  }
-}
-
-// ── RENDER CAAS RESULTS ──────────────────────────────────────
-function renderCaaSResults(siteResults,portfolioSPD,isPortfolio,firstGeo,missingCount){
-  const sites=S.sites;const n=sites.length;
-  const siteData=siteResults.map(sr=>{
-    const spd=sr.result?.spd??20;const eligible=isLCFS(sr.address);const fee=lookupFee(S.caasProduct,S.stalls,eligible);
-    return{address:sr.address,spd,eligible,fee,hasData:sr.result?.hasData};
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+(function init() {
+  // Initialize all range track fills
+  document.querySelectorAll('input[type=range]').forEach(r => trackRange(r));
+  // Initialize checkbox colors
+  ['lcfs-box','design-box','epc-box'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.color = 'transparent';
   });
-  const portMonthly=siteData.reduce((a,s)=>a+s.fee.monthly,0);
-  const portAnnual=siteData.reduce((a,s)=>a+s.fee.annual,0);
-  const port10yr=siteData.reduce((a,s)=>a+s.fee.total10,0);
-  const anyCapped=siteData.some(s=>s.fee.capped);
-  const totalCaaSAnnual=portAnnual;
-  const productLabel={base:'Base Station (200 kW/port)',re400:'RE400 (400 kW/port)'}[S.caasProduct]||'—';
-  const maxSPD=S.caasProduct==='re400'?30:16;
-  const maxSessionsPerYear=maxSPD*S.stalls*n*365;
-  let totalSess10=0;for(let y=1;y<=10;y++)totalSess10+=portfolioSPD*365*Math.pow(1.1,y-1);
-  const avgUtil=maxSessionsPerYear>0?Math.min(100,(totalSess10/10)/maxSessionsPerYear*100):0;
-  const LCFS_BADGE='<span style="font-size:.6rem;font-family:var(--mono);background:rgba(248,185,24,.10);border:1px solid var(--gold-border);border-radius:3px;padding:1px 5px;color:var(--gold);margin-left:5px;vertical-align:middle;">LCFS</span>';
-
-  let html=`
-    <div class="results-hero">
-      <div class="tab-row">
-        <button class="tab-btn active" id="tab-spd" onclick="switchTab('spd')">SPD Forecast</button>
-        <button class="tab-btn" id="tab-pl" onclick="switchTab('pl')">P&amp;L View</button>
-      </div>
-      <h2><em>CaaS</em> — ${isPortfolio?n+'-Site Portfolio':sites[0]}</h2>
-      <p>${productLabel} · ${S.stalls} stalls/site · ${n} site${n>1?'s':''}</p>
-    </div>`;
-
-  if(missingCount>0)html+=`<div class="no-data-banner" style="display:block;">⚠ No Paren coverage data for ${missingCount} of ${n} site${n>1?'s':''} — defaulting to 20 SPD for those. Adjust the SPD slider below to override.</div>`;
-
-  // Stat cards
-  html+=`<div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Sessions / Day</div><div class="stat-value gold" id="caas-stat-spd">${portfolioSPD}${isPortfolio?' total':''}</div><div class="stat-sub">Year 1 baseline (from Paren data)</div></div>
-    <div class="stat-card"><div class="stat-label">Year 1 Sessions</div><div class="stat-value" id="caas-stat-yr1">${fmtNum(Math.round(portfolioSPD*365))}</div><div class="stat-sub">Annual total</div></div>
-    <div class="stat-card"><div class="stat-label">Avg Lifetime Utilization</div><div class="stat-value" id="caas-stat-util">${avgUtil.toFixed(1)}%</div><div class="stat-sub">Avg across 10 yrs · 10% YoY growth</div></div>
-    <div class="stat-card"><div class="stat-label">Monthly CaaS Fee</div><div class="stat-value gold">${fmtFee(portMonthly,anyCapped)}</div><div class="stat-sub">${isPortfolio?'Portfolio total':''} · fixed 10-yr term</div></div>
-  </div>`;
-
-  // CaaS fee by site (portfolio only)
-  if(isPortfolio){
-    html+=`<div class="card"><div class="card-title">CaaS Fee by Site</div>
-      <table class="spd-table" style="margin-top:8px;">
-        <thead><tr><th style="text-align:left;">Address</th><th>SPD (Yr 1)</th><th>Monthly</th><th>Annual</th><th>LCFS?</th></tr></thead>
-        <tbody>${siteData.map(sd=>`<tr>
-          <td>${sd.address}${sd.eligible?LCFS_BADGE:''}</td>
-          <td class="year-spd">${sd.spd}${!sd.hasData?' (est.)':''}</td>
-          <td>${fmtFee(sd.fee.monthly,sd.fee.capped)}/mo</td>
-          <td>${fmtFee(sd.fee.annual,sd.fee.capped)}/yr</td>
-          <td style="color:${sd.eligible?'var(--gold)':'var(--muted)'};">${sd.eligible?'Yes':'No'}</td>
-        </tr>`).join('')}
-        <tr style="border-top:2px solid var(--gold-border);color:var(--gold);font-weight:700;">
-          <td>Portfolio Total</td><td></td>
-          <td>${fmtFee(portMonthly,anyCapped)}/mo</td>
-          <td>${fmtFee(portAnnual,anyCapped)}/yr</td><td></td>
-        </tr></tbody>
-      </table>
-    </div>`;
-  }
-
-  // Map (single site only)
-  if(!isPortfolio&&firstGeo?.lat){
-    html+=`<div class="card"><div class="card-title">Site Location</div><div id="output-map"></div><p style="margin-top:8px;font-size:.72rem;color:var(--muted);">${firstGeo.displayName||sites[0]} · 1-mile radius shown</p></div>`;
-  }
-
-  // SPD Forecast Table + Chart (tab: spd)
-  html+=`<div id="view-spd">`;
-  html+=buildSPDForecastBlock(siteData,portfolioSPD,isPortfolio,'caas');
-  html+=`</div>`;
-
-  // P&L view (tab: pl)
-  html+=`<div id="view-pl" style="display:none;">`;
-  html+=`<div class="card">
-    <div class="card-title">Operating Assumptions</div>
-    <div class="card-sub">Year 1 values — sessions grow 10% annually · 3% price inflation</div>
-    <div class="slider-grid">
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Sessions / Day</span><span class="slider-value" id="c-valSPD">${portfolioSPD}</span></div>
-        <div class="slider-desc">Year 1 baseline (pre-filled from Paren data)</div>
-        <input type="range" class="pl-range" id="c-sliderSPD" min="5" max="${Math.max(100,Math.round(portfolioSPD*1.5))}" step="1" value="${portfolioSPD}" oninput="document.getElementById('c-valSPD').textContent=this.value;renderCaaSPL(${totalCaaSAnnual});">
-        <div class="slider-range-labels"><span>5</span><span>${Math.max(100,Math.round(portfolioSPD*1.5))}</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Charging Price</span><span class="slider-value" id="c-valCP">$0.50</span></div>
-        <div class="slider-desc">Price charged to customers ($/kWh)</div>
-        <input type="range" class="pl-range" id="c-sliderCP" min="0.25" max="0.75" step="0.01" value="0.50" oninput="document.getElementById('c-valCP').textContent='$'+parseFloat(this.value).toFixed(2);renderCaaSPL(${totalCaaSAnnual});">
-        <div class="slider-range-labels"><span>$0.25</span><span>$0.75</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Electricity Cost</span><span class="slider-value" id="c-valEC">$0.15</span></div>
-        <div class="slider-desc">Utility cost ($/kWh)</div>
-        <input type="range" class="pl-range" id="c-sliderEC" min="0.05" max="0.30" step="0.01" value="0.15" oninput="document.getElementById('c-valEC').textContent='$'+parseFloat(this.value).toFixed(2);renderCaaSPL(${totalCaaSAnnual});">
-        <div class="slider-range-labels"><span>$0.05</span><span>$0.30</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">CaaS Fee</span><span class="slider-value" style="color:var(--muted);">${fmtFee(portAnnual,anyCapped)}/yr</span></div>
-        <div class="slider-desc" style="color:var(--gold);">Fixed — based on product, stalls, and LCFS eligibility</div>
-      </div>
-    </div>
-  </div>`;
-  html+=`<div id="caas-metrics-wrap"></div>`;
-  html+=`<div class="card" id="caas-pl-table-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div class="card-title" style="margin-bottom:0;">Annual P&amp;L Summary</div><button class="btn-export" onclick="exportCaaSXlsx()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export XLSX</button></div>
-    <div class="pl-table-wrap"><table class="pl-table" id="caas-pl-table"><thead><tr id="caas-pl-thead"></tr></thead><tbody id="caas-pl-tbody"></tbody></table></div>
-  </div>`;
-  html+=`<div class="card"><div class="card-title">Cumulative Net Profit</div><canvas id="caas-cf-chart" style="max-height:300px;"></canvas></div>`;
-  html+=`</div>`; // end view-pl
-
-  html+=`<div class="disclaimer">For internal use only. SPD sourced from Paren EV session data via hex lookup. CaaS fees based on EE pricing tables at IRR=12%. © ${new Date().getFullYear()} Electric Era Technologies, Inc.</div>`;
-
-  document.getElementById('results-content').innerHTML=html;
-
-  // Wire up after render
-  if(!isPortfolio&&firstGeo?.lat)setTimeout(()=>renderMap(firstGeo.lat,firstGeo.lon,firstGeo.displayName||sites[0],'output-map'),200);
-  renderCaaSPL(totalCaaSAnnual);
-  window._caasAnnualFee=totalCaaSAnnual;
-  window._spdData=siteData;
-  window._portfolioSPD=portfolioSPD;
-  window._isPortfolio=isPortfolio;
-}
-
-function renderCaaSPL(caasAnnualFee){
-  const spd=parseInt(document.getElementById('c-sliderSPD')?.value||window._portfolioSPD||20);
-  const cp=parseFloat(document.getElementById('c-sliderCP')?.value||'0.50');
-  const ec=parseFloat(document.getElementById('c-sliderEC')?.value||'0.15');
-  const r=computeCaaSPLMath(spd,cp,ec,caasAnnualFee);
-
-  // Metrics
-  const mw=document.getElementById('caas-metrics-wrap');
-  if(mw)mw.innerHTML=`<div class="metrics-grid">
-    <div class="metric-card featured"><div class="metric-label">10-Year Net Profit</div><div class="metric-value ${r.totalProfit>=0?'gold':''}">${fmtCurrency(r.totalProfit)}</div><div class="metric-sub">After electricity + CaaS fees</div></div>
-    <div class="metric-card"><div class="metric-label">10-Year Revenue</div><div class="metric-value">${fmtCurrency(r.totalRevenue)}</div><div class="metric-sub">Gross charging revenue</div></div>
-    <div class="metric-card"><div class="metric-label">10-Year Electricity</div><div class="metric-value">${fmtCurrency(r.totalEnergy)}</div><div class="metric-sub">Total energy cost</div></div>
-    <div class="metric-card"><div class="metric-label">10-Year CaaS Fees</div><div class="metric-value">${fmtCurrency(r.totalCaaS)}</div><div class="metric-sub">Total subscription cost</div></div>
-  </div>`;
-
-  // Table
-  const thead=document.getElementById('caas-pl-thead');const tbody=document.getElementById('caas-pl-tbody');
-  if(!thead||!tbody)return;
-  let th='<th>Line Item</th>';for(let y=1;y<=10;y++)th+=`<th>Yr ${y}</th>`;th+='<th class="total-col">Total</th>';thead.innerHTML=th;
-  function row(label,vals,cls='',fmt=fmtFull,showTotal=true){const total=vals.reduce((a,v)=>a+v,0);const cells=vals.map(v=>`<td class="${v<0?'neg':v>0?'pos':''}">${fmt(v)}</td>`).join('');const tcell=showTotal?`<td class="total-col ${total<0?'neg':total>0?'pos':''}">${fmt(total)}</td>`:'<td class="total-col">—</td>';return`<tr class="${cls}"><td>${label}</td>${cells}${tcell}</tr>`;}
-  function sRow(label){return`<tr class="section-header"><td colspan="12">${label}</td></tr>`;}
-  let html='';
-  html+=sRow('VOLUME');
-  html+=row('Sessions / Day',r.years.map(y=>Math.round(y.sessions/365)),'',v=>fmtNum(v),false);
-  html+=row('Annual Sessions',r.years.map(y=>y.sessions),'',v=>fmtNum(Math.round(v)));
-  html+=sRow('REVENUE');
-  html+=row('Gross charging revenue',r.years.map(y=>y.grossRevenue));
-  html+=row('Payment processing fee',r.years.map(y=>-y.paymentFee));
-  html+=row('Net charging revenue',r.years.map(y=>y.netRevenue),'subtotal');
-  html+=sRow('OPERATING COSTS');
-  html+=row('Electricity cost',r.years.map(y=>-y.energyCost));
-  html+=row('CaaS subscription fee',r.years.map(y=>-y.caasOpEx));
-  html+=sRow('NET PROFIT');
-  html+=row('Net operating profit',r.years.map(y=>y.netProfit),'grand-total');
-  tbody.innerHTML=html;
-
-  // Chart
-  let cum=0;const cumData=r.years.map(y=>{cum+=y.netProfit;return Math.round(cum);});
-  renderChart('caas-cf-chart','line',{labels:r.years.map(y=>'Year '+y.y),datasets:[{label:'Cumulative Net Profit',data:cumData,borderColor:'#F8B918',backgroundColor:'rgba(248,185,24,0.08)',borderWidth:2.5,fill:true,tension:0.35,pointBackgroundColor:cumData.map(v=>v>=0?'#22C55E':'#EF4444'),pointBorderColor:cumData.map(v=>v>=0?'#22C55E':'#EF4444'),pointRadius:5,pointHoverRadius:7}]},{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtFull(ctx.parsed.y)}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#888',font:{size:11},callback:v=>fmtCurrency(v)},title:{display:true,text:'Cumulative Net Profit ($)',color:'#7A7A96',font:{size:11}}}}});
-}
-
-// ── RENDER CAPEX RESULTS ─────────────────────────────────────
-function renderCapExResults(siteResults,portfolioSPD,isPortfolio,firstGeo,missingCount){
-  const sites=S.sites;const n=sites.length;
-  const p=calcPricing();
-  const hardwareCost=p.hardware;const designCost=p.design+p.epc;const constructionCost=p.construction;
-  const batteryCost=p.batteryPrice+p.batteryOM;
-  const batteryLabel={none:'None','125kw':'125 kW BESS','250kw':'250 kW BESS'}[S.battery]||'—';
-  const includeLCFS=firstGeo?isLCFS(sites[0]):false;
-  const retailLabel=S.retailPrograms.includes('none')?'None':S.retailPrograms.length+' program'+(S.retailPrograms.length!==1?'s':'');
-
-  const siteDataRows=siteResults.map(sr=>({address:sr.address,spd:sr.result?.spd??20,hasData:sr.result?.hasData}));
-
-  let html=`
-    <div class="results-hero">
-      <div class="tab-row">
-        <button class="tab-btn active" id="tab-spd" onclick="switchTab('spd')">SPD Forecast</button>
-        <button class="tab-btn" id="tab-pl" onclick="switchTab('pl')">P&amp;L View</button>
-      </div>
-      <h2><em>CapEx</em> — ${isPortfolio?n+'-Site Portfolio':sites[0]}</h2>
-      <p>${S.stalls} stalls · ${batteryLabel} · ${retailLabel} retail programs</p>
-    </div>`;
-
-  if(missingCount>0)html+=`<div class="no-data-banner" style="display:block;">⚠ No Paren coverage data for ${missingCount} of ${n} site${n>1?'s':''} — defaulting to 20 SPD for those.</div>`;
-
-  // Stats
-  html+=`<div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Sessions / Day</div><div class="stat-value gold">${portfolioSPD}${isPortfolio?' total':''}</div><div class="stat-sub">Year 1 baseline from Paren data</div></div>
-    <div class="stat-card"><div class="stat-label">Year 1 Sessions</div><div class="stat-value">${fmtNum(Math.round(portfolioSPD*365))}</div><div class="stat-sub">Annual total</div></div>
-    <div class="stat-card"><div class="stat-label">Year 10 Sessions</div><div class="stat-value">${fmtNum(Math.round(portfolioSPD*365*Math.pow(1.1,9)))}</div><div class="stat-sub">At 10% YoY growth</div></div>
-    <div class="stat-card"><div class="stat-label">Total CapEx</div><div class="stat-value">${fmtCurrency(p.subtotal+60000)}</div><div class="stat-sub">Including utility upgrade est.</div></div>
-  </div>`;
-
-  if(isPortfolio){
-    html+=`<div class="card"><div class="card-title">SPD by Site (Year 1)</div>
-      <table class="spd-table" style="margin-top:8px;"><thead><tr><th style="text-align:left;">Address</th><th>SPD (Yr 1)</th><th>Yr 1 Sessions</th></tr></thead>
-      <tbody>${siteDataRows.map(s=>`<tr><td>${s.address}</td><td class="year-spd">${s.spd}${!s.hasData?' (est.)':''}</td><td>${fmtNum(Math.round(s.spd*365))}</td></tr>`).join('')}
-      <tr class="total-row"><td>Portfolio Total</td><td>${portfolioSPD}</td><td>${fmtNum(Math.round(portfolioSPD*365))}</td></tr></tbody></table>
-    </div>`;
-  }
-
-  if(!isPortfolio&&firstGeo?.lat){
-    html+=`<div class="card"><div class="card-title">Site Location</div><div id="output-map"></div><p style="margin-top:8px;font-size:.72rem;color:var(--muted);">${firstGeo.displayName||sites[0]} · 1-mile radius shown</p></div>`;
-  }
-
-  html+=`<div id="view-spd">`;
-  html+=buildSPDForecastBlock(siteDataRows,portfolioSPD,isPortfolio,'capex');
-  html+=`</div>`;
-
-  html+=`<div id="view-pl" style="display:none;">`;
-  html+=`<div class="card">
-    <div class="card-title">Operating Assumptions</div>
-    <div class="card-sub">Year 1 values — sessions grow 10% annually · 3% price inflation</div>
-    <div class="slider-grid">
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Sessions / Day</span><span class="slider-value" id="cx-valSPD">${portfolioSPD}</span></div>
-        <div class="slider-desc">Year 1 baseline (pre-filled from Paren data)</div>
-        <input type="range" class="pl-range" id="cx-sliderSPD" min="5" max="${Math.max(100,Math.round(portfolioSPD*1.5))}" step="1" value="${portfolioSPD}" oninput="document.getElementById('cx-valSPD').textContent=this.value;renderCapExPLView();">
-        <div class="slider-range-labels"><span>5</span><span>${Math.max(100,Math.round(portfolioSPD*1.5))}</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Charging Price</span><span class="slider-value" id="cx-valCP">$0.50</span></div>
-        <input type="range" class="pl-range" id="cx-sliderCP" min="0.25" max="0.75" step="0.01" value="0.50" oninput="document.getElementById('cx-valCP').textContent='$'+parseFloat(this.value).toFixed(2);renderCapExPLView();">
-        <div class="slider-range-labels"><span>$0.25</span><span>$0.75</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Electricity Cost</span><span class="slider-value" id="cx-valEC">$0.15</span></div>
-        <input type="range" class="pl-range" id="cx-sliderEC" min="0.05" max="0.30" step="0.01" value="0.15" oninput="document.getElementById('cx-valEC').textContent='$'+parseFloat(this.value).toFixed(2);renderCapExPLView();">
-        <div class="slider-range-labels"><span>$0.05</span><span>$0.30</span></div>
-      </div>
-      <div class="slider-group">
-        <div class="slider-header"><span class="slider-label">Demand Rate</span><span class="slider-value" id="cx-valDR">$0.00</span></div>
-        <div class="slider-desc">Utility demand charge ($/kW/month)</div>
-        <input type="range" class="pl-range" id="cx-sliderDR" min="0" max="25" step="0.5" value="0" oninput="document.getElementById('cx-valDR').textContent='$'+parseFloat(this.value).toFixed(2);renderCapExPLView();">
-        <div class="slider-range-labels"><span>$0</span><span>$25/kW</span></div>
-      </div>
-    </div>
-  </div>`;
-  html+=`<div id="cx-metrics-wrap"></div>`;
-  html+=`<div class="card" id="cx-pl-table-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div class="card-title" style="margin-bottom:0;">Annual P&amp;L Summary</div><button class="btn-export" onclick="exportCapExXlsx()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export XLSX</button></div>
-    <div class="pl-table-wrap"><table class="pl-table" id="cx-pl-table"><thead><tr id="cx-pl-thead"></tr></thead><tbody id="cx-pl-tbody"></tbody></table></div>
-  </div>`;
-  html+=`<div class="card"><div class="card-title">Cumulative Free Cash Flow</div><canvas id="cx-cf-chart" style="max-height:300px;"></canvas></div>`;
-  html+=`</div>`; // end view-pl
-
-  html+=`<div class="disclaimer">For internal use only. SPD sourced from Paren EV session data via hex lookup. CapEx pricing from EE standard tables. © ${new Date().getFullYear()} Electric Era Technologies, Inc.</div>`;
-
-  document.getElementById('results-content').innerHTML=html;
-  window._capExParams={hardwareCost,designCost,constructionCost,batteryCost,batteryLabel,includeLCFS,portfolioSPD};
-  if(!isPortfolio&&firstGeo?.lat)setTimeout(()=>renderMap(firstGeo.lat,firstGeo.lon,firstGeo.displayName||sites[0],'output-map'),200);
-  renderCapExPLView();
-}
-
-function renderCapExPLView(){
-  const p=window._capExParams||{};
-  const spd=parseInt(document.getElementById('cx-sliderSPD')?.value||p.portfolioSPD||20);
-  const cp=parseFloat(document.getElementById('cx-sliderCP')?.value||'0.50');
-  const ec=parseFloat(document.getElementById('cx-sliderEC')?.value||'0.15');
-  const dr=parseFloat(document.getElementById('cx-sliderDR')?.value||'0');
-  const r=computeCapExPL(spd,cp,ec,p.hardwareCost,p.designCost,p.constructionCost,dr,p.batteryCost,p.includeLCFS);
-  const{years,totalCapEx,irr,breakeven}=r;
-  const irrValid=isFinite(irr)&&!isNaN(irr)&&irr>=0;
-  const totalRevenue=years.reduce((s,y)=>s+y.grossChargingRevenue+y.lcfsRevenue,0);
-  const totalNetProfit=years.reduce((s,y)=>s+y.cashFlow,0);
-  const mw=document.getElementById('cx-metrics-wrap');
-  if(mw)mw.innerHTML=`<div class="metrics-grid">
-    <div class="metric-card featured"><div class="metric-label">10-Year IRR</div><div class="metric-value ${irrValid?'gold':''}">${irrValid?(irr*100).toFixed(1)+'%':'< 0%'}</div><div class="metric-sub">Internal rate of return</div></div>
-    <div class="metric-card"><div class="metric-label">Breakeven</div><div class="metric-value">${breakeven!==null?breakeven.toFixed(1)+'y':'> 10y'}</div><div class="metric-sub">Years to payback</div></div>
-    <div class="metric-card"><div class="metric-label">Total CapEx</div><div class="metric-value">${fmtCurrency(totalCapEx)}</div><div class="metric-sub">Upfront investment</div></div>
-    <div class="metric-card"><div class="metric-label">10-Year Revenue</div><div class="metric-value">${fmtCurrency(totalRevenue)}</div><div class="metric-sub">Gross charging revenue</div></div>
-    <div class="metric-card"><div class="metric-label">10-Year Net Profit</div><div class="metric-value">${fmtCurrency(totalNetProfit)}</div><div class="metric-sub">After all OpEx</div></div>
-  </div>`;
-  const thead=document.getElementById('cx-pl-thead');const tbody=document.getElementById('cx-pl-tbody');
-  if(!thead||!tbody)return;
-  let th='<th>Line Item</th>';for(let y=1;y<=10;y++)th+=`<th>Yr ${y}</th>`;th+='<th class="total-col">Total</th>';thead.innerHTML=th;
-  function row(label,vals,cls='',fmt=fmtFull,noTotal=false){let h=`<tr class="${cls}"><td>${label}</td>`;let total=0;for(const v of vals){const fc=typeof v==='number'?(v<0?' class="neg"':''):'' ;h+=`<td${fc}>${typeof v==='number'?fmt(v):v}</td>`;if(typeof v==='number')total+=v;}if(noTotal)h+='<td class="total-col">—</td></tr>';else{const tc=total<0?' class="neg total-col"':' class="total-col"';h+=`<td${tc}>${fmt(total)}</td></tr>`;}return h;}
-  function sRow(label){return`<tr class="section-header"><td colspan="13">${label}</td></tr>`;}
-  let html='';
-  html+=sRow('VOLUME');html+=row('Sessions / Day',years.map(y=>y.annualSessions/365),'',v=>fmtNum(Math.round(v)),true);html+=row('Annual Sessions',years.map(y=>y.annualSessions),'',fmtNum);
-  html+=sRow('REVENUE');html+=row('Total Charging Revenue',years.map(y=>y.grossChargingRevenue),'subtotal');
-  if(p.includeLCFS)html+=row('LCFS Credits',years.map(()=>20000));
-  html+=sRow('OPERATING COSTS');html+=row('Energy Cost',years.map(y=>-y.energyCost));html+=row('Demand Charges',years.map(y=>-y.annualDemandCharge));html+=row('Operations & Experiences',years.map(y=>-y.opsCost));html+=row('Payment Processing (6.5%)',years.map(y=>-y.paymentFee),'neg-row');html+=row('Total OpEx',years.map(y=>-(y.paymentFee+y.energyCost+y.annualDemandCharge+y.opsCost)),'subtotal');
-  html+=sRow('PROFIT');html+=row('Net Operating Profit',years.map(y=>y.cashFlow),'grand-total');
-  html+=sRow('CAPEX');html+=row('Hardware',years.map((_,i)=>i===0?-p.hardwareCost:0));if(p.batteryCost>0)html+=row(p.batteryLabel,years.map((_,i)=>i===0?-p.batteryCost:0));html+=row('Design & EPC',years.map((_,i)=>i===0?-p.designCost:0));html+=row('Construction',years.map((_,i)=>i===0?-p.constructionCost:0));html+=row('Utility Upgrade (est.)',years.map((_,i)=>i===0?-60000:0));html+=row('Total CapEx (Year 0)',years.map((_,i)=>i===0?-totalCapEx:0),'subtotal');
-  html+=sRow('CASH FLOW');let cum=-totalCapEx;const cumCFs=years.map(y=>{cum+=y.cashFlow;return cum;});html+=row('Cumulative Free Cash Flow',cumCFs,'grand-total',fmtFull,true);
-  tbody.innerHTML=html;
-
-  // Chart
-  let cumCF=-totalCapEx;const cumCFData=years.map(y=>{cumCF+=y.cashFlow;return Math.round(cumCF);});
-  renderChart('cx-cf-chart','line',{labels:years.map(y=>'Year '+y.y),datasets:[{label:'Cumulative Free Cash Flow',data:cumCFData,borderColor:'#F8B918',backgroundColor:'rgba(248,185,24,0.08)',borderWidth:2.5,fill:true,tension:0.35,pointBackgroundColor:cumCFData.map(v=>v>=0?'#22C55E':'#EF4444'),pointBorderColor:cumCFData.map(v=>v>=0?'#22C55E':'#EF4444'),pointRadius:5,pointHoverRadius:7}]},{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString()}}},scales:{x:{grid:{color:'rgba(56,56,74,0.5)'},ticks:{color:'#7A7A96',font:{size:11}}},y:{grid:{color:'rgba(56,56,74,0.5)'},ticks:{color:'#7A7A96',font:{size:11},callback:v=>'$'+(v>=0?'':'-')+Math.abs(v/1000).toFixed(0)+'k'},title:{display:true,text:'Cumulative Free Cash Flow ($)',color:'#7A7A96',font:{size:11}}}}});
-}
-
-// ── SPD FORECAST TABLE (shared) ──────────────────────────────
-function buildSPDForecastBlock(siteData,portfolioSPD,isPortfolio,prefix){
-  const GROWTH=0.10;
-  let html=`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div><div class="card-title">10-Year SPD Forecast</div><div class="card-sub" style="margin-bottom:0;">10% year-over-year growth applied · Paren data baseline</div></div>
-      <button class="btn-export" onclick="exportSPDXlsx('${prefix}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export XLSX</button>
-    </div>
-    <div class="spd-table-wrap"><table class="spd-table" id="${prefix}-spd-table">
-      <thead><tr><th style="text-align:left;">Site</th>`;
-  for(let y=1;y<=10;y++)html+=`<th>Yr ${y}</th>`;
-  html+=`<th style="border-left:1px solid var(--border);color:var(--gold);">Yr 1 Sessions</th><th style="color:var(--gold);">Yr 10 Sessions</th></tr></thead><tbody>`;
-
-  if(isPortfolio){
-    for(const s of siteData){
-      const spd1=s.spd??20;html+=`<tr><td>${s.address}${!s.hasData?' <span style="font-size:.65rem;color:var(--muted);">(est.)</span>':''}</td>`;
-      for(let y=1;y<=10;y++)html+=`<td class="year-spd">${(spd1*Math.pow(1+GROWTH,y-1)).toFixed(1)}</td>`;
-      html+=`<td style="border-left:1px solid var(--border);">${fmtNum(Math.round(spd1*365))}</td><td>${fmtNum(Math.round(spd1*365*Math.pow(1+GROWTH,9)))}</td></tr>`;
-    }
-    // Portfolio total row
-    html+=`<tr class="total-row"><td>Portfolio Total</td>`;
-    for(let y=1;y<=10;y++)html+=`<td>${(portfolioSPD*Math.pow(1+GROWTH,y-1)).toFixed(1)}</td>`;
-    html+=`<td style="border-left:1px solid var(--border);">${fmtNum(Math.round(portfolioSPD*365))}</td><td>${fmtNum(Math.round(portfolioSPD*365*Math.pow(1+GROWTH,9)))}</td></tr>`;
-  } else {
-    const spd1=portfolioSPD;html+=`<tr><td>${siteData[0]?.address||'Site'}</td>`;
-    for(let y=1;y<=10;y++)html+=`<td class="year-spd">${(spd1*Math.pow(1+GROWTH,y-1)).toFixed(1)}</td>`;
-    html+=`<td style="border-left:1px solid var(--border);">${fmtNum(Math.round(spd1*365))}</td><td>${fmtNum(Math.round(spd1*365*Math.pow(1+GROWTH,9)))}</td></tr>`;
-  }
-
-  // Annual sessions total row
-  html+=`<tr style="border-top:1px solid var(--border);"><td style="color:var(--muted);font-size:.72rem;">Annual Sessions (portfolio)</td>`;
-  for(let y=1;y<=10;y++)html+=`<td style="color:var(--muted);font-size:.72rem;">${fmtNum(Math.round(portfolioSPD*365*Math.pow(1+GROWTH,y-1)))}</td>`;
-  html+=`<td style="border-left:1px solid var(--border);"></td><td></td></tr>`;
-
-  html+=`</tbody></table></div></div>`;
-
-  // Session growth chart
-  html+=`<div class="card"><div class="card-title">Annual Session Growth</div><canvas id="${prefix}-session-chart" style="max-height:260px;"></canvas></div>`;
-
-  // Wire chart after render (deferred)
-  setTimeout(()=>{
-    const labels=[];const data=[];for(let y=1;y<=10;y++){labels.push('Year '+y);data.push(Math.round(portfolioSPD*365*Math.pow(1+GROWTH,y-1)));}
-    renderChart(`${prefix}-session-chart`,'bar',{labels,datasets:[{label:'Annual Sessions',data,backgroundColor:'rgba(248,185,24,0.7)',borderColor:'#F8B918',borderWidth:1,borderRadius:4}]},{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtNum(ctx.parsed.y)+' sessions'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#888',font:{size:11},callback:v=>fmtNum(v)}}}});
-  },100);
-
-  return html;
-}
-
-// ── TAB SWITCH ───────────────────────────────────────────────
-function switchTab(tab){
-  document.getElementById('tab-spd').classList.toggle('active',tab==='spd');
-  document.getElementById('tab-pl').classList.toggle('active',tab==='pl');
-  document.getElementById('view-spd').style.display=tab==='spd'?'block':'none';
-  document.getElementById('view-pl').style.display=tab==='pl'?'block':'none';
-}
-
-// ── XLSX EXPORT ──────────────────────────────────────────────
-function exportSPDXlsx(prefix){
-  const table=document.getElementById(prefix+'-spd-table');if(!table)return;
-  const wb=XLSX.utils.book_new();const wsData=[];
-  table.querySelectorAll('thead tr').forEach(tr=>wsData.push(Array.from(tr.querySelectorAll('th')).map(th=>th.textContent.trim())));
-  table.querySelectorAll('tbody tr').forEach(tr=>wsData.push(Array.from(tr.querySelectorAll('td')).map(td=>{const t=td.textContent.trim();const n=parseFloat(t.replace(/[$,]/g,''));return isNaN(n)?t:n;})));
-  const ws=XLSX.utils.aoa_to_sheet(wsData);ws['!cols']=[{wch:40},...Array(12).fill({wch:14})];
-  XLSX.utils.book_append_sheet(wb,ws,'SPD Forecast');XLSX.writeFile(wb,'EE_SPD_Forecast_'+new Date().toISOString().split('T')[0]+'.xlsx');
-}
-function exportCaaSXlsx(){
-  const table=document.getElementById('caas-pl-table');if(!table)return;
-  const wb=XLSX.utils.book_new();const wsData=[];
-  table.querySelectorAll('thead tr').forEach(tr=>wsData.push(Array.from(tr.querySelectorAll('th')).map(th=>th.textContent.trim())));
-  table.querySelectorAll('tbody tr').forEach(tr=>{if(tr.classList.contains('section-header')){wsData.push([]);wsData.push([tr.querySelector('td')?.textContent.trim()||'']);return;}wsData.push(Array.from(tr.querySelectorAll('td')).map(td=>{const t=td.textContent.trim();const n=parseFloat(t.replace(/[$,]/g,''));return isNaN(n)?t:n;}));});
-  const ws=XLSX.utils.aoa_to_sheet(wsData);ws['!cols']=[{wch:32},...Array(12).fill({wch:14})];
-  XLSX.utils.book_append_sheet(wb,ws,'CaaS P&L');XLSX.writeFile(wb,'EE_CaaS_PL_'+new Date().toISOString().split('T')[0]+'.xlsx');
-}
-function exportCapExXlsx(){
-  const table=document.getElementById('cx-pl-table');if(!table)return;
-  const wb=XLSX.utils.book_new();const wsData=[];
-  table.querySelectorAll('thead tr').forEach(tr=>wsData.push(Array.from(tr.querySelectorAll('th')).map(th=>th.textContent.trim())));
-  table.querySelectorAll('tbody tr').forEach(tr=>{if(tr.classList.contains('section-header')){wsData.push([]);wsData.push([tr.querySelector('td')?.textContent.trim()||'']);return;}wsData.push(Array.from(tr.querySelectorAll('td')).map(td=>{const t=td.textContent.trim();const n=parseFloat(t.replace(/[$,]/g,''));return isNaN(n)?t:n;}));});
-  const ws=XLSX.utils.aoa_to_sheet(wsData);ws['!cols']=[{wch:32},...Array(13).fill({wch:14})];
-  XLSX.utils.book_append_sheet(wb,ws,'CapEx P&L');XLSX.writeFile(wb,'EE_CapEx_PL_'+new Date().toISOString().split('T')[0]+'.xlsx');
-}
+  // DP capex section visible by default (budget starts as 'dp')
+  document.getElementById('dp-capex-section').style.display = 'block';
+})();
 </script>
 </body>
 </html>
