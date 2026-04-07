@@ -430,7 +430,7 @@ let _rendered = false;
 const KWH_PER_SESSION = 35;
 const UPTIME = 0.995;
 const PAYMENT_FEE = 0.065;
-const GROWTH = 0.10;
+const GROWTH = 0.05;
 const INFLATION = 0.03;
 const BASKET_MARGIN = 0.10;
 const DESIGN_COST = 31500;
@@ -884,7 +884,7 @@ function renderDP(r) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div>
         <div class="card-title">10-Year P&amp;L — Portfolio</div>
-        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+        <div class="card-sub" style="margin-bottom:0;">5% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
       </div>
       <button class="btn-export" onclick="exportXlsx('dp-pl-table','DP_PL')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1048,7 +1048,7 @@ function renderCaaS(r) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div>
         <div class="card-title">10-Year P&amp;L — Portfolio</div>
-        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+        <div class="card-sub" style="margin-bottom:0;">5% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
       </div>
       <button class="btn-export" onclick="exportXlsx('caas-pl-table','CaaS_PL')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
