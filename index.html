@@ -566,11 +566,11 @@ function hwPerSite(product, ports, battery) {
   let hw;
   if (product === 'base') {
     const units = Math.ceil(ports / 2);
-    hw = 17000 + units * 46000 + 6000; // switchgear + charger units + shipping
+    hw = 17000 + units * 65000; // switchgear + charger units
     if (battery === 'none') hw += 9500;  // PowerNode Zero (omitted when battery present)
   } else {
     // RE400
-    hw = ports * 47500 + 6000; // charger units + shipping
+    hw = ports * 50000 + 20000; // charger units + cabinet + shipping
   }
   if (battery === '125kw') hw += 146500 + 90000; // 125kW battery: hw + 10yr O&M prepaid
   if (battery === '250kw') hw += 186000 + 90000; // 250kW battery
