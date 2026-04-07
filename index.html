@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Electric Era — Internal Portfolio P&L Tool</title>
+<title>Electric Era — Portfolio P&L Tool — Internal</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -228,7 +228,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
       <div class="stall-unit">ports per site</div>
       <input type="range" id="ports-range" min="2" max="16" value="4" step="1"
         oninput="S.ports=+this.value;updatePortsDisplay();trackRange(this);maybeRerender();">
-      <div class="range-labels"><span>2</span><span>4</span><span>8</span><span>12</span><span>16</span></div>
+      <div class="range-labels"><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span></div>
     </div>
   </div>
 
@@ -267,7 +267,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
         <div class="chkbox" id="lcfs-box"></div>
         <div class="check-card-body">
           <div class="chk-title">LCFS Eligible</div>
-          <div class="chk-sub">CA, OR, WA — reduces CaaS fee · adds $20K/site/yr for Direct Purchase</div>
+          <div class="chk-sub">CA, OR, WA — reduces CaaS fee · adds year-by-year credits for Direct Purchase</div>
         </div>
       </div>
     </div>
@@ -435,7 +435,17 @@ const INFLATION = 0.03;
 const BASKET_MARGIN = 0.10;
 const DESIGN_COST = 31500;
 const EPC_COST = 40000;
-const LCFS_ANNUAL = 20000; // per site per year (DP only)
+// LCFS year-by-year rates (from EE+MN8 LCFS sheet, Y1–Y10)
+const LCFS_THROUGHPUT_RATE = [69.4636, 67.9635, 66.4616, 64.9579, 58.5714, 36.5644, 17.0406, 15.799, 14.5538, 13.3123]; // $/MWh
+const LCFS_FCI_RATE        = [12604.65, 12182.64, 11753.63, 11317.34, 10037.08, 6167.96, 2824.37, 2567.43, 2313.20, 2063.79]; // $/charger-unit/yr
+
+function lcfsRevenueYr(y, mwhDelivered, numSites, ports, product) {
+  const idx = Math.min(y - 1, 9);
+  const chargerUnits = product === 're400' ? ports : Math.ceil(ports / 2);
+  const throughput = mwhDelivered * LCFS_THROUGHPUT_RATE[idx];
+  const fci        = chargerUnits * numSites * LCFS_FCI_RATE[idx];
+  return throughput + fci;
+}
 
 // ══════════════════════════════════════════════════════════
 // CAAS FEE LOOKUP TABLE  (from CaaS_GoalSeek_12pct_IRR)
@@ -711,7 +721,7 @@ function computeDP(s) {
     const payFee        = grossCharging * PAYMENT_FEE;
     const netCharging   = grossCharging - payFee;
     const instoreRev    = spd * convRate * 365 * gr * adjBasket * BASKET_MARGIN;
-    const lcfsRev       = lcfs ? LCFS_ANNUAL * numSites : 0;
+    const lcfsRev       = lcfs ? lcfsRevenueYr(y, kwhDelivered / 1000, numSites, ports, product) : 0;
 
     const energyCost    = (kwhDelivered / 0.9) * adjEC;
     const demandCost    = peakDemandKw(spd * gr, numSites, ports, product, battery) * demandRate * 12;
