@@ -224,11 +224,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 
     <div class="field">
       <label>Ports per Site</label>
-      <div class="stall-display" id="ports-display">4</div>
+      <div class="stall-display" id="ports-display">6</div>
       <div class="stall-unit">ports per site</div>
-      <input type="range" id="ports-range" min="2" max="16" value="4" step="1"
+      <input type="range" id="ports-range" min="2" max="12" value="6" step="2"
         oninput="S.ports=+this.value;updatePortsDisplay();trackRange(this);maybeRerender();">
-      <div class="range-labels"><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span></div>
+      <div class="range-labels"><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span></div>
     </div>
   </div>
 
