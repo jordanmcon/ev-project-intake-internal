@@ -557,8 +557,8 @@ function lookupCaaS(product, battery, lcfs, ports, spdPerSite) {
 
 // ══════════════════════════════════════════════════════════
 // HARDWARE & OPS COST (per site, from EE pricing sheet)
-// Base Station: charger unit = 2 ports, $46k/unit; Switchgear $17k; PowerNode $9.5k; Shipping $6k
-// RE400: $47.5k/port; Shipping $6k (no switchgear or PowerNode)
+// Base Station: charger unit = 2 ports, $65k/unit; Switchgear $17k; PNZ $9.5k
+// RE400: $50k/port + $20000 cabinet; 
 // Battery: 125kW = $146.5k hw + $90k O&M; 250kW = $186k hw + $90k O&M
 // Note: PowerNode Zero not used with battery (per pricing sheet)
 // ══════════════════════════════════════════════════════════
@@ -566,11 +566,11 @@ function hwPerSite(product, ports, battery) {
   let hw;
   if (product === 'base') {
     const units = Math.ceil(ports / 2);
-    hw = 17000 + units * 65000; // switchgear + charger units
+    hw = 17000 + units * 65000 + 6000; // switchgear + charger units + shipping
     if (battery === 'none') hw += 9500;  // PowerNode Zero (omitted when battery present)
   } else {
     // RE400
-    hw = ports * 50000 + 20000; // charger units + cabinet + shipping
+    hw = ports * 50000 + 20000 + 6000; // charger units + cabinet + shipping
   }
   if (battery === '125kw') hw += 146500 + 90000; // 125kW battery: hw + 10yr O&M prepaid
   if (battery === '250kw') hw += 186000 + 90000; // 250kW battery
@@ -844,7 +844,7 @@ function renderDP(r) {
   let html = `
     <div class="results-hero">
       <h2><em>Direct Purchase</em> — ${S.numSites}-Site Portfolio</h2>
-      <p>${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
+      <p>Indicative Pricing · ${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
     </div>
     <div class="metrics-grid">
       <div class="metric-card featured">
