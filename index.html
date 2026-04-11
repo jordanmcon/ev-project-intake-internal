@@ -788,13 +788,14 @@ function computeCaaS(s) {
     const energyCost    = (kwhDelivered / 0.9) * adjEC;
     const demandCost    = peakDemandKw(spd * gr, numSites, ports, product, battery) * demandRate * 12;
     const caasOpEx      = totalCaaSAnnual; // fixed annual fee
-    const totalOpEx     = payFee + energyCost + demandCost + caasOpEx;
+    const totalOpEx     = energyCost + demandCost + caasOpEx;
 
-    const netProfit = grossCharging + instoreRev - totalOpEx;
+    const bonusDeprecYr = y === 1 ? (hwPerSite(product, ports, battery) + DESIGN_COST + EPC_COST + 164500 + UTILITY_UPGRADE) * numSites * BONUS_DEPR_RATE : 0;
+    const netProfit = netCharging + instoreRev - totalOpEx + bonusDeprecYr;
     years.push({
       y, annSessions: Math.round(annSessions),
       grossCharging, payFee, netCharging, instoreRev,
-      energyCost, demandCost, caasOpEx, totalOpEx, netProfit
+      energyCost, demandCost, caasOpEx, totalOpEx, bonusDeprecYr, netProfit
     });
   }
 
@@ -1116,25 +1117,23 @@ function renderCaaS(r) {
   tb += row('Gross Charging Revenue', years.map(y => y.grossCharging));
   tb += row('Payment Processing (6.5%)', years.map(y => -y.payFee));
   tb += row('Net Charging Revenue', years.map(y => y.netCharging), 'subtotal');
-  tb += row('Incremental In-Store Revenue', years.map(y => y.instoreRev));
+  tb += row('Incremental In-Store Profit', years.map(y => y.instoreRev));
   tb += sRow('OPERATING COSTS');
   tb += row('Electricity Cost', years.map(y => -y.energyCost));
   if (S.demandRate > 0) tb += row(`Demand Charges${S.battery !== 'none' ? ` (−${BATTERY_SHAVE_KW[S.battery]} kW shaved)` : ''}`, years.map(y => -y.demandCost));
   tb += row('CaaS Subscription Fee', years.map(y => -y.caasOpEx));
   tb += row('Total Operating Costs', years.map(y => -y.totalOpEx), 'subtotal');
-  const cHwPerSite   = hwPerSite(S.product, S.ports, S.battery);
-  const cBonusDeprec = (cHwPerSite + DESIGN_COST + EPC_COST + 164500 + UTILITY_UPGRADE) * S.numSites * BONUS_DEPR_RATE;
-  tb += row('Bonus Depreciation (21%)', years.map((_, i) => i === 0 ? cBonusDeprec : 0));
+  tb += row('Bonus Depreciation (21%)', years.map(y => y.bonusDeprecYr));
   tb += sRow('NET PROFIT');
   tb += row('Net Operating Profit', years.map(y => y.netProfit), 'grand-total');
   tb += sRow('CUMULATIVE');
   let cum = 0;
-  tb += row('Cumulative Net Profit', years.map((y, i) => { cum += y.netProfit + (i === 0 ? cBonusDeprec : 0); return cum; }), 'grand-total', true);
+  tb += row('Cumulative Net Profit', years.map(y => { cum += y.netProfit; return cum; }), 'grand-total', true);
   tbody.innerHTML = tb;
 
   // Chart
   let cumP = 0;
-  const cumData = years.map((y, i) => { cumP += y.netProfit + (i === 0 ? cBonusDeprec : 0); return Math.round(cumP); });
+  const cumData = years.map(y => { cumP += y.netProfit; return Math.round(cumP); });
   renderChart('caas-cf-chart', 'line', {
     labels: years.map(y => 'Year ' + y.y),
     datasets: [{
