@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Electric Era — Portfolio P&L Tool — Internal</title>
+<title>Electric Era — Internal Portfolio P&L Tool</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -224,11 +224,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 
     <div class="field">
       <label>Ports per Site</label>
-      <div class="stall-display" id="ports-display">6</div>
+      <div class="stall-display" id="ports-display">4</div>
       <div class="stall-unit">ports per site</div>
-      <input type="range" id="ports-range" min="2" max="12" value="6" step="2"
+      <input type="range" id="ports-range" min="2" max="16" value="4" step="1"
         oninput="S.ports=+this.value;updatePortsDisplay();trackRange(this);maybeRerender();">
-      <div class="range-labels"><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span></div>
+      <div class="range-labels"><span>2</span><span>4</span><span>8</span><span>12</span><span>16</span></div>
     </div>
   </div>
 
@@ -282,11 +282,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
     <div class="slider-row">
       <div class="slider-header">
         <span class="slider-label">Sessions per Day (portfolio)</span>
-        <span class="slider-val" id="val-spd">50</span>
+        <span class="slider-val" id="val-spd">25</span>
       </div>
-      <input type="range" id="sl-spd" min="10" max="750" value="50" step="1"
+      <input type="range" id="sl-spd" min="10" max="200" value="25" step="1"
         oninput="S.spd=+this.value;document.getElementById('val-spd').textContent=this.value;trackRange(this);maybeRerender();">
-      <div class="slider-rl"><span>10</span><span>150</span><span>300</span><span>450</span><span>600</span><span>750</span></div>
+      <div class="slider-rl"><span>10</span><span>100</span><span>200</span></div>
     </div>
 
     <div class="slider-row">
@@ -301,7 +301,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
 
     <div class="slider-row">
       <div class="slider-header">
-        <span class="slider-label">In-Store Basket Size</span>
+        <span class="slider-label">Basket Size</span>
         <span class="slider-val" id="val-basket">$50</span>
       </div>
       <input type="range" id="sl-basket" min="10" max="200" value="50" step="5"
@@ -331,9 +331,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;heigh
         <span class="slider-label">Electricity Price ($/kWh)</span>
         <span class="slider-val" id="val-elec">$0.10</span>
       </div>
-      <input type="range" id="sl-elec" min="0.01" max="0.25" value="0.10" step="0.01"
+      <input type="range" id="sl-elec" min="0.05" max="0.25" value="0.10" step="0.01"
         oninput="S.elecPrice=+this.value;document.getElementById('val-elec').textContent='$'+parseFloat(this.value).toFixed(2);trackRange(this);maybeRerender();">
-      <div class="slider-rl"><span>$0.01</span><span>$0.13</span><span>$0.25</span></div>
+      <div class="slider-rl"><span>$0.05</span><span>$0.15</span><span>$0.25</span></div>
     </div>
 
     <div class="slider-row">
@@ -430,11 +430,13 @@ let _rendered = false;
 const KWH_PER_SESSION = 35;
 const UPTIME = 0.995;
 const PAYMENT_FEE = 0.065;
-const GROWTH = 0.05;
+const GROWTH = 0.10;
 const INFLATION = 0.03;
 const BASKET_MARGIN = 0.10;
 const DESIGN_COST = 31500;
 const EPC_COST = 40000;
+const UTILITY_UPGRADE = 60000; // per site, bonus depreciation eligible
+const BONUS_DEPR_RATE = 0.21;
 // LCFS year-by-year rates (from EE+MN8 LCFS sheet, Y1–Y10)
 const LCFS_THROUGHPUT_RATE = [69.4636, 67.9635, 66.4616, 64.9579, 58.5714, 36.5644, 17.0406, 15.799, 14.5538, 13.3123]; // $/MWh
 const LCFS_FCI_RATE        = [12604.65, 12182.64, 11753.63, 11317.34, 10037.08, 6167.96, 2824.37, 2567.43, 2313.20, 2063.79]; // $/charger-unit/yr
@@ -557,8 +559,8 @@ function lookupCaaS(product, battery, lcfs, ports, spdPerSite) {
 
 // ══════════════════════════════════════════════════════════
 // HARDWARE & OPS COST (per site, from EE pricing sheet)
-// Base Station: charger unit = 2 ports, $65k/unit; Switchgear $17k; PNZ $9.5k
-// RE400: $50k/port + $20000 cabinet; 
+// Base Station: charger unit = 2 ports, $46k/unit; Switchgear $17k; PowerNode $9.5k; Shipping $6k
+// RE400: $47.5k/port; Shipping $6k (no switchgear or PowerNode)
 // Battery: 125kW = $146.5k hw + $90k O&M; 250kW = $186k hw + $90k O&M
 // Note: PowerNode Zero not used with battery (per pricing sheet)
 // ══════════════════════════════════════════════════════════
@@ -566,11 +568,11 @@ function hwPerSite(product, ports, battery) {
   let hw;
   if (product === 'base') {
     const units = Math.ceil(ports / 2);
-    hw = 17000 + units * 65000 + 6000; // switchgear + charger units + shipping
+    hw = 17000 + units * 46000 + 6000; // switchgear + charger units + shipping
     if (battery === 'none') hw += 9500;  // PowerNode Zero (omitted when battery present)
   } else {
     // RE400
-    hw = ports * 50000 + 20000 + 6000; // charger units + cabinet + shipping
+    hw = ports * 47500 + 6000; // charger units + shipping
   }
   if (battery === '125kw') hw += 146500 + 90000; // 125kW battery: hw + 10yr O&M prepaid
   if (battery === '250kw') hw += 186000 + 90000; // 250kW battery
@@ -579,9 +581,9 @@ function hwPerSite(product, ports, battery) {
 
 // Annual operations cost per site per year
 // Base Station: [4→$14k, 6→$27k, 8→$36k] — interpolated/extrapolated
-// RE400: $14k per port per year
+// RE400: $12k per port per year
 function opsPerSite(product, ports) {
-  if (product === 're400') return ports * 14000;
+  if (product === 're400') return ports * 12000;
   if (ports <= 4) return 14000 + (ports - 4) * 6500;
   if (ports <= 6) return 14000 + (ports - 4) * (27000 - 14000) / 2;
   if (ports <= 8) return 27000 + (ports - 6) * (36000 - 27000) / 2;
@@ -703,7 +705,9 @@ function computeDP(s) {
   const designC  = designServices ? DESIGN_COST * numSites : 0;
   const epcC     = epcMgmt       ? EPC_COST * numSites    : 0;
   const constrC  = construction * numSites;
-  const totalCapEx = totalHw + designC + epcC + constrC;
+  const totalCapEx  = totalHw + designC + epcC + constrC;
+  const utilityC    = UTILITY_UPGRADE * numSites;
+  const bonusDeprec = (totalHw + designC + epcC + constrC + utilityC) * BONUS_DEPR_RATE;
 
   const years = [];
   const cashFlows = [-totalCapEx];
@@ -728,12 +732,13 @@ function computeDP(s) {
     const opsCost       = opsSite * numSites;
     const totalOpEx     = payFee + energyCost + demandCost + opsCost;
 
-    const cashFlow = grossCharging + instoreRev + lcfsRev - totalOpEx;
+    const bonusDeprecYr = y === 1 ? bonusDeprec : 0;
+    const cashFlow = grossCharging + instoreRev + lcfsRev - totalOpEx + bonusDeprecYr;
     cashFlows.push(cashFlow);
     years.push({
       y, annSessions: Math.round(annSessions),
       grossCharging, payFee, netCharging, instoreRev, lcfsRev,
-      energyCost, demandCost, opsCost, totalOpEx, cashFlow
+      energyCost, demandCost, opsCost, totalOpEx, bonusDeprecYr, cashFlow
     });
   }
 
@@ -844,7 +849,7 @@ function renderDP(r) {
   let html = `
     <div class="results-hero">
       <h2><em>Direct Purchase</em> — ${S.numSites}-Site Portfolio</h2>
-      <p>Indicative Pricing · ${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
+      <p>${productLabel} · ${S.ports} ports/site · ${battLabel}${S.lcfs ? ' · LCFS' : ''}</p>
     </div>
     <div class="metrics-grid">
       <div class="metric-card featured">
@@ -884,7 +889,7 @@ function renderDP(r) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div>
         <div class="card-title">10-Year P&amp;L — Portfolio</div>
-        <div class="card-sub" style="margin-bottom:0;">5% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
       </div>
       <button class="btn-export" onclick="exportXlsx('dp-pl-table','DP_PL')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -946,7 +951,7 @@ function renderDP(r) {
   tb += row('Gross Charging Revenue', years.map(y => y.grossCharging));
   tb += row('Payment Processing (6.5%)', years.map(y => -y.payFee));
   tb += row('Net Charging Revenue', years.map(y => y.netCharging), 'subtotal');
-  tb += row('Incremental In-Store Profit', years.map(y => y.instoreRev));
+  tb += row('Incremental In-Store Revenue', years.map(y => y.instoreRev));
   if (S.lcfs) tb += row('LCFS Credits', years.map(y => y.lcfsRev));
   tb += sRow('OPERATING COSTS');
   tb += row('Electricity Cost', years.map(y => -y.energyCost));
@@ -962,6 +967,7 @@ function renderDP(r) {
   if (epcC > 0)    tb += row('EPC Management', years.map((_, i) => i === 0 ? -epcC : 0));
   tb += row('Construction', years.map((_, i) => i === 0 ? -constrC : 0));
   tb += row('Total CapEx', years.map((_, i) => i === 0 ? -totalCapEx : 0), 'subtotal');
+  tb += row('Bonus Depreciation (21%)', years.map(y => y.bonusDeprecYr));
   tb += sRow('CASH FLOW');
   let cum = -totalCapEx;
   const cumVals = years.map(y => { cum += y.cashFlow; return cum; });
@@ -1048,7 +1054,7 @@ function renderCaaS(r) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div>
         <div class="card-title">10-Year P&amp;L — Portfolio</div>
-        <div class="card-sub" style="margin-bottom:0;">5% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
+        <div class="card-sub" style="margin-bottom:0;">10% annual session growth · 3% price inflation · all ${S.numSites} sites combined</div>
       </div>
       <button class="btn-export" onclick="exportXlsx('caas-pl-table','CaaS_PL')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1116,16 +1122,19 @@ function renderCaaS(r) {
   if (S.demandRate > 0) tb += row(`Demand Charges${S.battery !== 'none' ? ` (−${BATTERY_SHAVE_KW[S.battery]} kW shaved)` : ''}`, years.map(y => -y.demandCost));
   tb += row('CaaS Subscription Fee', years.map(y => -y.caasOpEx));
   tb += row('Total Operating Costs', years.map(y => -y.totalOpEx), 'subtotal');
+  const cHwPerSite   = hwPerSite(S.product, S.ports, S.battery);
+  const cBonusDeprec = (cHwPerSite + DESIGN_COST + EPC_COST + 164500 + UTILITY_UPGRADE) * S.numSites * BONUS_DEPR_RATE;
+  tb += row('Bonus Depreciation (21%)', years.map((_, i) => i === 0 ? cBonusDeprec : 0));
   tb += sRow('NET PROFIT');
   tb += row('Net Operating Profit', years.map(y => y.netProfit), 'grand-total');
   tb += sRow('CUMULATIVE');
   let cum = 0;
-  tb += row('Cumulative Net Profit', years.map(y => { cum += y.netProfit; return cum; }), 'grand-total', true);
+  tb += row('Cumulative Net Profit', years.map((y, i) => { cum += y.netProfit + (i === 0 ? cBonusDeprec : 0); return cum; }), 'grand-total', true);
   tbody.innerHTML = tb;
 
   // Chart
   let cumP = 0;
-  const cumData = years.map(y => { cumP += y.netProfit; return Math.round(cumP); });
+  const cumData = years.map((y, i) => { cumP += y.netProfit + (i === 0 ? cBonusDeprec : 0); return Math.round(cumP); });
   renderChart('caas-cf-chart', 'line', {
     labels: years.map(y => 'Year ' + y.y),
     datasets: [{
